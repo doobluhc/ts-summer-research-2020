@@ -3,6 +3,8 @@ using LinearAlgebra
 using PyPlot
 using PyCall
 using Statistics: mean
+using DataFrames
+using ControlSystems
 @pyimport matplotlib.pyplot as pyplt
 
 
@@ -11,6 +13,8 @@ function sample(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64;T = 1000
     regret = zeros(T)
     gain = zeros(T)
     avg_cost = zeros(T)
+    j_optimal = tr(dare([a₀;a₁],[b₀;b₁],1.0,1.0))
+    print("jopt",j_optimal)
     u = zeros(T)
     u₀ = 1
     x = zeros(T+1)
@@ -89,10 +93,12 @@ function simulation(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64; T =
         end
     end
 
-    pyplt.plot([log(t) for t = 1:T],avg_regret)
-    pyplt.xlabel("logt")
-    pyplt.ylabel("log(average regret)")
-    pyplt.title("log(average regret) vs log(t) ")
-    pyplt.savefig("average regret.png")
+
+
+    # pyplt.plot([log(t) for t = 1:T],avg_regret)
+    # pyplt.xlabel("logt")
+    # pyplt.ylabel("log(average regret)")
+    # pyplt.title("log(average regret) vs log(t) ")
+    # pyplt.savefig("average regret.png")
 
 end
