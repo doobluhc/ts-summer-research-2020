@@ -5,6 +5,7 @@ using LinearAlgebra
 using Plots
 using DataFrames
 using GLM
+using Statistics
 @pyimport matplotlib.pyplot as pyplt
 
 
@@ -63,35 +64,75 @@ function simulation(a::Float64, b::Float64; T = 1000, N = 100)
     for n = 1:N
         avg_cost[n], gain[n], â[n], b̂[n], regret[n] = sample(a, b)
 
-        # pyplt.plot([t for t = 1:T],avg_cost[n])
-        # pyplt.axis([0,T,0,100])
-        # pyplt.xlabel("t")
-        # pyplt.ylabel("cost/t")
-        # pyplt.title("cost function value/t vs t ")
-        # pyplt.savefig("average cost vs t for CE.png")
+        pyplt.plot([t for t = 1:T],avg_cost[n])
+        pyplt.axis([0,T,0,100])
+        pyplt.xlabel("t")
+        pyplt.ylabel("cost/t")
+        pyplt.title("cost function value/t vs t ")
+        pyplt.savefig("average cost vs t for CE.png")
     end
 
-    for t = 1:T
-        for n = 1:N
-            sum = sum + regret[n][t]
-            avg_regret[t] = log(abs(sum / N))
-        end
-    end
+    # plot log(average regret) vs log t
+    # for t = 1:T
+    #     temp = zeros(N)
+    #     for n = 1:N
+    #         temp[n] = regret[n][t]
+    #     end
+    #     if mean(temp) < 0
+    #         avg_regret[t] = 0
+    #     else
+    #         avg_regret[t] = mean(temp)
+    #     end
+    # end
+    #
+    # # data = DataFrame(X = [log(t) for t = 10:T], Y = avg_regret[10:T])
+    # # model = lm(@formula(Y ~ X), data)
+    # # print(model)
+    # # intercept = coeftable(model).cols[1][1]
+    # # slope = coeftable(model).cols[1][2]
+    # # x = 0:0.1:7
+    # # y = slope * x .+ intercept
+    # # print(y)
+    # # pyplt.plot(x, y, color="red", linewidth=2.0, linestyle="--")
+    # # pyplt.scatter([log(t) for t = 10:T],avg_regret[10:T])
+    # # pyplt.xlabel("logt")
+    # # pyplt.ylabel("log(average regret)")
+    # # pyplt.title("log(average regret) vs log(t) ")
+    # # pyplt.text(5,3,"slope = $slope")
+    # # pyplt.text(5,6,"intercept = $intercept")
+    # # pyplt.savefig("average regret for CE.png")
 
+    #plot regret[t]/sqrt(t) vs t
 
-    data = DataFrame(X = [log(t) for t = 1:T], Y = avg_regret)
-    model = lm(@formula(Y ~ X), data)
-    intercept = coeftable(model).cols[1][1]
-    slope = coeftable(model).cols[1][2]
-    x = 0:0.1:7
-    y = slope * x .+ intercept
-    pyplt.plot(x, y, color="red", linewidth=2.0, linestyle="--")
-    pyplt.scatter([log(t) for t = 1:T],avg_regret)
-    pyplt.xlabel("logt")
-    pyplt.ylabel("log(average regret)")
-    pyplt.title("log(average regret) vs log(t) ")
-    pyplt.text(2,17,"slope = $slope")
-    pyplt.savefig("average regret for CE.png")
+    # for t = 1:T
+    #     temp = zeros(N)
+    #     for n = 1:N
+    #         temp[n] = regret[n][t]
+    #     end
+    #     if mean(temp) < 0
+    #         avg_regret[t] = 0
+    #     else
+    #         avg_regret[t] = mean(temp)/sqrt(t)
+    #     end
+    # end
+    #
+    # data = DataFrame(X = [t for t = 10:T], Y = avg_regret[10:T])
+    # model = lm(@formula(Y ~ X), data)
+    # print(model)
+    # intercept = coeftable(model).cols[1][1]
+    # slope = coeftable(model).cols[1][2]
+    # x = 0:1:1000
+    # y = slope * x .+ intercept
+    # print(y)
+    # pyplt.plot(x, y, color="red", linewidth=2.0, linestyle="--")
+    # pyplt.scatter([t for t = 10:T],avg_regret[10:T])
+    # pyplt.xlabel("t")
+    # pyplt.ylabel("average regret/sqrt(t)")
+    # pyplt.title("average regret/sqrt(t) vs t ")
+    # pyplt.text(800,1000,"slope = $slope")
+    # pyplt.text(800,4000,"intercept = $intercept")
+    # pyplt.savefig("average regret over sqrt t vs t.png")
+    #
 
 
 end
