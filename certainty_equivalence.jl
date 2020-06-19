@@ -2,9 +2,12 @@ using PyPlot
 using PyCall
 using ControlSystems
 using LinearAlgebra
-using DataFrames
-using GLM
 using Statistics
+using ScikitLearn
+using ScikitLearn: fit!
+using ScikitLearn: predict
+@sk_import linear_model: LinearRegression
+@sk_import model_selection: train_test_split
 @pyimport matplotlib.pyplot as pyplt
 
 
@@ -84,22 +87,22 @@ function simulation(a::Float64, b::Float64; T = 10000, N = 100)
         end
     end
 
-    data = DataFrame(X = [log(t) for t = 100:T], Y = avg_regret[100:T])
-    model = lm(@formula(Y ~ X), data)
-    print(model)
-    intercept = coeftable(model).cols[1][1]
-    slope = coeftable(model).cols[1][2]
-    x = 2:0.01:4.5
-    y = slope * x .+ intercept
-
-    pyplt.plot(x, y, color="red", linewidth=2.0, linestyle="--")
-    pyplt.scatter([log(10,t) for t = 100:T],avg_regret[100:T])
+    X = reshape([log(t) for t = 100:T],9901,1)
+    Y = reshape(avg_regret[100:T],9901,1)
+    regr = LinearRegression()
+    fit!(regr,X,Y)
+    y_pred = predict(regr,X)
+    slope = float(regr.coef_)
+    intercept = float(regr.intercept_)
+    pyplt.scatter(X, Y, color ="blue")
+    pyplt.plot(X, y_pred, color ="red")
+    pyplt.text(5,7.5,"slope = $slope")
+    pyplt.text(5,6.5,"intercept = $intercept")
     pyplt.xlabel("logt")
     pyplt.ylabel("log(average regret)")
     pyplt.title("log(average regret) vs log(t) ")
-    pyplt.text(5,3,"slope = $slope")
-    pyplt.text(5,6,"intercept = $intercept")
-    pyplt.savefig("average regret for CE.png")
+    pyplt.savefig("linear regression.png")
+
 
     #plot regret[t]/sqrt(t) vs t
 
@@ -132,12 +135,6 @@ function simulation(a::Float64, b::Float64; T = 10000, N = 100)
     # pyplt.text(800,4000,"intercept = $intercept")
     # pyplt.savefig("average regret over sqrt t vs t.png")
     #
-
-
-end
-
-function linear_regression(data::DataFrame, T::Int64)
-    while true
 
 
 end
