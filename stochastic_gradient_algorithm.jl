@@ -5,6 +5,10 @@ using PyCall
 using Statistics: mean
 using DataFrames
 using ControlSystems
+using ScikitLearn
+using ScikitLearn: fit!
+using ScikitLearn: predict
+@sk_import linear_model: LinearRegression
 @pyimport matplotlib.pyplot as pyplt
 
 
@@ -13,8 +17,7 @@ function sample(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64;T = 1000
     regret = zeros(T)
     gain = zeros(T)
     avg_cost = zeros(T)
-    j_optimal = tr(dare([a₀;a₁],[b₀;b₁],1.0,1.0))
-    print("jopt",j_optimal)
+    j_optimal = 1
     u = zeros(T)
     u₀ = 1
     x = zeros(T+1)
@@ -32,6 +35,7 @@ function sample(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64;T = 1000
             x[t+1] = a₀ * x[t] + a₁ * x₀ + b₀ * u[t] + b₁ * u₀ + w
             gain[t] = -u[t]/x[t]
             cost[t] = x[t] * x[t]
+            regret[t] = cost[t] - j_optimal
         else
             u[t] = -1/θ[t][3] * (θ[t][1]*x[t] + θ[t][2]*x[t-1] + θ[t][4]*u[t-1])
             ϕ[t] = [x[t];x[t-1];u[t];u[t-1]]
@@ -40,17 +44,9 @@ function sample(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64;T = 1000
             x[t+1] = a₀ * x[t] + a₁ * x[t-1] + b₀ * u[t] + b₁ * u[t-1] + w
             gain[t] = -u[t]/x[t]
             cost[t] = cost[t-1] + x[t] * x[t]
+            regret[t] = regret[t-1] + cost[t] - j_optimal
         avg_cost[t] = cost[t]/t
         θ[t+1] = θ[t] + ϕ[t]/r * (x[t+1] - ϕ'[t] * θ[t])
-        end
-    end
-
-
-    for t in 1:T
-        if t == 1
-            regret[t] = cost[t] - avg_cost[T]
-        else
-            regret[t] = regret[t-1] + cost[t] - avg_cost[T]
         end
     end
 
@@ -63,7 +59,6 @@ function simulation(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64; T =
     gain = [ zeros(T) for n = 1:N ]
     regret = [ zeros(T) for n = 1:N ]
     avg_regret = zeros(T)
-    sum = 0.0
     pyplt.clf()
 
     for n = 1:N
@@ -85,20 +80,33 @@ function simulation(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64; T =
         # pyplt.savefig("gain.png")
 
     end
-
+    #plot log(average regret) vs log t
     for t = 1:T
+        temp = zeros(N)
         for n = 1:N
-            sum = sum + regret[n][t]
-        avg_regret[t] = log(abs(sum/N))
+            temp[n] = regret[n][t]
+        end
+        if mean(temp) < 0
+            avg_regret[t] = 0
+        else
+            avg_regret[t] = log(10,mean(temp))
         end
     end
 
-
-
-    # pyplt.plot([log(t) for t = 1:T],avg_regret)
-    # pyplt.xlabel("logt")
-    # pyplt.ylabel("log(average regret)")
-    # pyplt.title("log(average regret) vs log(t) ")
-    # pyplt.savefig("average regret.png")
+    X = reshape([log(t) for t = 100:T],9901,1)
+    Y = reshape(avg_regret[100:T],9901,1)
+    regr = LinearRegression()
+    fit!(regr,X,Y)
+    y_pred = predict(regr,X)
+    slope = float(regr.coef_)
+    intercept = float(regr.intercept_)
+    pyplt.scatter(X, Y, color ="blue")
+    pyplt.plot(X, y_pred, color ="red")
+    pyplt.text(5,7.5,"slope = $slope")
+    pyplt.text(5,6.5,"intercept = $intercept")
+    pyplt.xlabel("logt")
+    pyplt.ylabel("log(average regret)")
+    pyplt.title("log(average regret) vs log(t) ")
+    pyplt.savefig("average cost vs log t SG.png")
 
 end
