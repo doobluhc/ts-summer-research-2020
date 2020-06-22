@@ -101,40 +101,8 @@ function simulation(a::Float64, b::Float64; T = 10000, N = 100)
     pyplt.xlabel("logt")
     pyplt.ylabel("log(average regret)")
     pyplt.title("log(average regret) vs log(t) ")
-    pyplt.savefig("linear regression.png")
+    pyplt.savefig("average cost vs log t CE.png")
 
-
-    #plot regret[t]/sqrt(t) vs t
-
-    # for t = 1:T
-    #     temp = zeros(N)
-    #     for n = 1:N
-    #         temp[n] = regret[n][t]
-    #     end
-    #     if mean(temp) < 0
-    #         avg_regret[t] = 0
-    #     else
-    #         avg_regret[t] = mean(temp)/sqrt(t)
-    #     end
-    # end
-    #
-    # data = DataFrame(X = [t for t = 10:T], Y = avg_regret[10:T])
-    # model = lm(@formula(Y ~ X), data)
-    # print(model)
-    # intercept = coeftable(model).cols[1][1]
-    # slope = coeftable(model).cols[1][2]
-    # x = 0:1:1000
-    # y = slope * x .+ intercept
-    # print(y)
-    # pyplt.plot(x, y, color="red", linewidth=2.0, linestyle="--")
-    # pyplt.scatter([t for t = 10:T],avg_regret[10:T])
-    # pyplt.xlabel("t")
-    # pyplt.ylabel("average regret/sqrt(t)")
-    # pyplt.title("average regret/sqrt(t) vs t ")
-    # pyplt.text(800,1000,"slope = $slope")
-    # pyplt.text(800,4000,"intercept = $intercept")
-    # pyplt.savefig("average regret over sqrt t vs t.png")
-    #
 
 
 end
