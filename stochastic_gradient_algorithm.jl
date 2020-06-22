@@ -106,7 +106,7 @@ function simulation(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64; T =
     pyplt.text(5,6.5,"intercept = $intercept")
     pyplt.xlabel("logt")
     pyplt.ylabel("log(average regret)")
-    pyplt.title("log(average regret) vs log(t) ")
+    pyplt.title("log(average regret) vs log(t) for SG")
     pyplt.savefig("average cost vs log t SG.png")
 
 end
