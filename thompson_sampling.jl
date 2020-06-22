@@ -2,12 +2,19 @@ using PyPlot
 using PyCall
 using Distributions
 using LinearAlgebra
+using ScikitLearn
+using ScikitLearn: fit!
+using ScikitLearn: predict
+using ControlSystems
+@sk_import linear_model: LinearRegression
 @pyimport matplotlib.pyplot as pyplt
 
-function sample(a::Float64,b::Float64;T = 1000)
+function sample(a::Float64,b::Float64;T = 10000)
     cost = zeros(T)
     gain = zeros(T)
     avg = zeros(T)
+    regret = zeros(T)
+    j_optimal = tr(dare(a, b, 1.0, 1.0))
     θ = [[0.0;1.0] for t = 1:(T+1)]
     θ̂ = [[0.0;1.0] for t = 1:T]
     Σ = [Symmetric([1.0 0.0;0.0 1.0]) for t = 1:(T+1)]
@@ -26,31 +33,54 @@ function sample(a::Float64,b::Float64;T = 1000)
         Σ[t+1] = Σ[t] - Symmetric((Σ[t]*z[t]*transpose(z[t])*Σ[t]))/(1+transpose(z[t])*Σ[t]*z[t])
         if t == 1
             cost[t] = x[t] * x[t]
+            regret[t] = cost[t] - j_optimal
             avg[t] = cost[t]
         else
             cost[t] = cost[t-1] + x[t]*x[t]
+            regret[t] = regret[t-1] + cost[t] - j_optimal
             avg[t] = cost[t]/t
         end
     end
-    return avg,gain
+    return avg,gain,regret
 end
-function simulate(a::Float64,b::Float64;T = 1000, N = 100)
+function simulation(a::Float64,b::Float64;T = 10000, N = 100)
     avg  = [ zeros(T) for n = 1:N ]
     gain = [ zeros(T) for n = 1:N ]
+    regret = [zeros(T) for n = 1:N]
+    avg_regret = zeros(T)
     pyplt.clf()
     for n in 1:N
-        avg[n],gain[n] = sample(a,b)
-        plot_data(avg[n])
+        avg[n],gain[n],regret[n] = sample(a,b)
     end
 
-end
+    #plot log(average regret) vs log t
+    for t = 1:T
+        temp = zeros(N)
+        for n = 1:N
+            temp[n] = regret[n][t]
+        end
+        if mean(temp) < 0
+            avg_regret[t] = 0
+        else
+            avg_regret[t] = log(10,mean(temp))
+        end
+    end
 
-function plot_data(data;T = 1000)
-    pyplt.plot([t for t = 1:T],data)
-    pyplt.axis([0,T,0,10])
-    pyplt.xlabel("t")
-    pyplt.ylabel("cost/t")
-    pyplt.title("cost/t vs t ")
-    pyplt.savefig("average cost vs t ts.png")
+    X = reshape([log(t) for t = 100:T],9901,1)
+    Y = reshape(avg_regret[100:T],9901,1)
+    regr = LinearRegression()
+    fit!(regr,X,Y)
+    y_pred = predict(regr,X)
+    slope = float(regr.coef_)
+    intercept = float(regr.intercept_)
+    pyplt.scatter(X, Y, color ="blue")
+    pyplt.plot(X, y_pred, color ="red")
+    pyplt.text(5,7.5,"slope = $slope")
+    pyplt.text(5,6.5,"intercept = $intercept")
+    pyplt.xlabel("logt")
+    pyplt.ylabel("log(average regret)")
+    pyplt.title("log(average regret) vs log(t) ")
+    pyplt.savefig("average cost vs log t TS.png")
+
 
 end
