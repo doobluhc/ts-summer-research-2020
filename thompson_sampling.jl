@@ -66,7 +66,7 @@ function simulation(a::Float64,b::Float64;T = 10000, N = 100)
         end
     end
 
-    X = reshape([log(t) for t = 100:T],9901,1)
+    X = reshape([log(10,t) for t = 100:T],9901,1)
     Y = reshape(avg_regret[100:T],9901,1)
     regr = LinearRegression()
     fit!(regr,X,Y)

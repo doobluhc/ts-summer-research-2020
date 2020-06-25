@@ -79,7 +79,6 @@ function simulation(a::Float64,b::Float64;T = 40000 , N = 100)
     pyplt.clf()
     for n in 1:N
         avg_cost[n],regret[n]= sample(a,b)
-        println(length(regret[n]))
     end
 
 
@@ -97,7 +96,7 @@ function simulation(a::Float64,b::Float64;T = 40000 , N = 100)
         end
     end
 
-    X = reshape([log(t) for t = 100:T],39901,1)
+    X = reshape([log(10,t) for t = 100:T],39901,1)
     Y = reshape(avg_regret[100:T],39901,1)
     regr = LinearRegression()
     fit!(regr,X,Y)
@@ -106,8 +105,8 @@ function simulation(a::Float64,b::Float64;T = 40000 , N = 100)
     intercept = float(regr.intercept_)
     pyplt.scatter(X, Y, color ="blue")
     pyplt.plot(X, y_pred, color ="red")
-    pyplt.text(5,3.5,"slope = $slope")
-    pyplt.text(5,4.5,"intercept = $intercept")
+    pyplt.text(2,6,"slope = $slope")
+    pyplt.text(2,5,"intercept = $intercept")
     pyplt.xlabel("logt")
     pyplt.ylabel("log(average regret)")
     pyplt.title("log(average regret) vs log(t) for TSDE")
