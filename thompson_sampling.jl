@@ -62,6 +62,35 @@ function simulation(a::Float64,b::Float64;T = 100000, N = 50)
     end
 
     #plot log(average regret) vs log t
+    # for t = 1:T
+    #     temp = zeros(N)
+    #     for n = 1:N
+    #         temp[n] = regret[n][t]
+    #     end
+    #     if mean(temp) < 0
+    #         avg_regret[t] = 0
+    #     else
+    #         avg_regret[t] = log(10,mean(temp))
+    #     end
+    # end
+    #
+    # X = reshape([log(10,t) for t = 100:T],99901,1)
+    # Y = reshape(avg_regret[100:T],99901,1)
+    # regr = LinearRegression()
+    # fit!(regr,X,Y)
+    # y_pred = predict(regr,X)
+    # slope = float(regr.coef_)
+    # intercept = float(regr.intercept_)
+    # pyplt.scatter(X, Y, color ="blue")
+    # pyplt.plot(X, y_pred, color ="red")
+    # print(slope)
+    # pyplt.xlabel("logt")
+    # pyplt.ylabel("log(average regret)")
+    # pyplt.title("log(average regret) vs log(t) for TS(slope = $slope)")
+    # pyplt.savefig("log average regret vs log t TS.png")
+
+
+    #plot average regret vs sqrt t
     for t = 1:T
         temp = zeros(N)
         for n = 1:N
@@ -70,12 +99,12 @@ function simulation(a::Float64,b::Float64;T = 100000, N = 50)
         if mean(temp) < 0
             avg_regret[t] = 0
         else
-            avg_regret[t] = log(10,mean(temp))
+            avg_regret[t] = mean(temp)
         end
     end
 
-    X = reshape([log(10,t) for t = 100:T],99901,1)
-    Y = reshape(avg_regret[100:T],99901,1)
+    X = reshape([sqrt(t) for t = 100:T],(T-99),1)
+    Y = reshape(avg_regret[100:T],(T-99),1)
     regr = LinearRegression()
     fit!(regr,X,Y)
     y_pred = predict(regr,X)
@@ -84,10 +113,9 @@ function simulation(a::Float64,b::Float64;T = 100000, N = 50)
     pyplt.scatter(X, Y, color ="blue")
     pyplt.plot(X, y_pred, color ="red")
     print(slope)
-    pyplt.xlabel("logt")
-    pyplt.ylabel("log(average regret)")
-    pyplt.title("log(average regret) vs log(t) for TS(slope = $slope)")
-    pyplt.savefig("log average regret vs log t TS.png")
-
+    pyplt.xlabel("sqrtt")
+    pyplt.ylabel("average regret")
+    pyplt.title("average regret vs sqrt t for TS(slope = $slope)")
+    pyplt.savefig("average regret vs sqrt t TS.png")
 
 end

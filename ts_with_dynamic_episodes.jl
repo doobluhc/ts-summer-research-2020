@@ -16,7 +16,7 @@ function sample(a::Float64,b::Float64;T = 40000,J = 300)
     cost = Float64[]
     avg_cost = Float64[]
     regret = Float64[]
-    j_optimal = tr(dare(a, b, 1.0, 1.0))
+    j_optimal = 1
     θ̃ = [0.0;0.0]
     θ̂ = [a;b]
     Σ = Symmetric([1.0 0.0;0.0 1.0])
@@ -52,7 +52,7 @@ function sample(a::Float64,b::Float64;T = 40000,J = 300)
                 push!(avg_cost,cost[t])
             else
                 push!(cost,cost[t-1] + x*x)
-                push!(regret,regret[t-1]+cost[t]-j_optimal)
+                push!(regret,regret[t-1]+x*x-j_optimal)
                 push!(avg_cost,cost[t]/t)
             end
 
@@ -79,6 +79,12 @@ function simulation(a::Float64,b::Float64;T = 40000 , N = 100)
     pyplt.clf()
     for n in 1:N
         avg_cost[n],regret[n]= sample(a,b)
+        # pyplt.plot([t for t = 1:T],avg_cost[n])
+        # pyplt.axis([0,T,0,2])
+        # pyplt.xlabel("t")
+        # pyplt.ylabel("cost/t")
+        # pyplt.title("cost function value/t vs t ")
+        # pyplt.savefig("average cost vs t for TSDE.png")
     end
 
 
@@ -105,12 +111,11 @@ function simulation(a::Float64,b::Float64;T = 40000 , N = 100)
     intercept = float(regr.intercept_)
     pyplt.scatter(X, Y, color ="blue")
     pyplt.plot(X, y_pred, color ="red")
-    pyplt.text(2,6,"slope = $slope")
-    pyplt.text(2,5,"intercept = $intercept")
+    print(slope)
     pyplt.xlabel("logt")
     pyplt.ylabel("log(average regret)")
-    pyplt.title("log(average regret) vs log(t) for TSDE")
-    pyplt.savefig("average  cost vs log t TSDE.png")
+    pyplt.title("log(average regret) vs log(t) for TSDE(slope = $slope)")
+    pyplt.savefig("log average regret vs log t TSDE.png")
 
 
 end
