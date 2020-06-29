@@ -9,41 +9,43 @@ using ControlSystems
 @sk_import linear_model: LinearRegression
 @pyimport matplotlib.pyplot as pyplt
 
-function sample(a::Float64,b::Float64;T = 10000)
+function sample(a::Float64,b::Float64;T = 100000)
     cost = zeros(T)
     gain = zeros(T)
     avg = zeros(T)
     regret = zeros(T)
-    j_optimal = tr(dare(a, b, 1.0, 1.0))
-    θ = [[0.0;1.0] for t = 1:(T+1)]
-    θ̂ = [[0.0;1.0] for t = 1:T]
-    Σ = [Symmetric([1.0 0.0;0.0 1.0]) for t = 1:(T+1)]
-    z = [[0.0;0.0] for t = 1:T]
-    u = zeros(T+1)
-    x = zeros(T+1)
+
+
+    θ = [0.0;1.0]
+    Σ = Symmetric([1.0 0.0;0.0 1.0])
+    j_optimal = 1
+    x = 0.0
 
     for t in 1:T
-        θ̂[t] = rand(MvNormal(θ[t], Σ[t]))
-        gain[t] = θ̂[t][1]/θ̂[t][2]
-        u[t] = -gain[t] * x[t]
-        z[t] = [x[t];u[t]]
-        w = randn()
-        x[t+1] = a * x[t] + b * u[t] + w
-        θ[t+1] = θ[t] + (Σ[t]*z[t]*(x[t+1]-transpose(z[t])*θ[t]))/(1+transpose(z[t])*Σ[t]*z[t])
-        Σ[t+1] = Σ[t] - Symmetric((Σ[t]*z[t]*transpose(z[t])*Σ[t]))/(1+transpose(z[t])*Σ[t]*z[t])
+
         if t == 1
-            cost[t] = x[t] * x[t]
+            cost[t] = x * x
             regret[t] = cost[t] - j_optimal
             avg[t] = cost[t]
         else
-            cost[t] = cost[t-1] + x[t]*x[t]
-            regret[t] = regret[t-1] + cost[t] - j_optimal
+            cost[t] = cost[t-1] + x*x
+            regret[t] = regret[t-1] + x*x - j_optimal
             avg[t] = cost[t]/t
         end
+
+        θ̂ = rand(MvNormal(θ, Σ))
+        gain[t] = θ̂[1]/θ̂[2]
+        u = -gain[t] * x
+        z = [x;u]
+        w = randn()
+        x = a * x + b * u + w
+        θ = θ + Σ*z*(x-z'*θ)/(1+z'*Σ*z)
+        Σ = Σ - Symmetric(Σ*z*z'*Σ)/(1+z'*Σ*z)
+
     end
     return avg,gain,regret
 end
-function simulation(a::Float64,b::Float64;T = 10000, N = 100)
+function simulation(a::Float64,b::Float64;T = 100000, N = 50)
     avg  = [ zeros(T) for n = 1:N ]
     gain = [ zeros(T) for n = 1:N ]
     regret = [zeros(T) for n = 1:N]
@@ -51,6 +53,12 @@ function simulation(a::Float64,b::Float64;T = 10000, N = 100)
     pyplt.clf()
     for n in 1:N
         avg[n],gain[n],regret[n] = sample(a,b)
+        # pyplt.plot([t for t = 1:T],avg[n])
+        # pyplt.axis([0,T,0,10])
+        # pyplt.xlabel("t")
+        # pyplt.ylabel("cost/t")
+        # pyplt.title("cost function value/t vs t ")
+        # pyplt.savefig("average cost vs t for TS.png")
     end
 
     #plot log(average regret) vs log t
@@ -66,8 +74,8 @@ function simulation(a::Float64,b::Float64;T = 10000, N = 100)
         end
     end
 
-    X = reshape([log(10,t) for t = 100:T],9901,1)
-    Y = reshape(avg_regret[100:T],9901,1)
+    X = reshape([log(10,t) for t = 100:T],99901,1)
+    Y = reshape(avg_regret[100:T],99901,1)
     regr = LinearRegression()
     fit!(regr,X,Y)
     y_pred = predict(regr,X)
@@ -75,12 +83,11 @@ function simulation(a::Float64,b::Float64;T = 10000, N = 100)
     intercept = float(regr.intercept_)
     pyplt.scatter(X, Y, color ="blue")
     pyplt.plot(X, y_pred, color ="red")
-    pyplt.text(5,7.5,"slope = $slope")
-    pyplt.text(5,6.5,"intercept = $intercept")
+    print(slope)
     pyplt.xlabel("logt")
     pyplt.ylabel("log(average regret)")
-    pyplt.title("log(average regret) vs log(t) for TS")
-    pyplt.savefig("average cost vs log t TS.png")
+    pyplt.title("log(average regret) vs log(t) for TS(slope = $slope)")
+    pyplt.savefig("log average regret vs log t TS.png")
 
 
 end

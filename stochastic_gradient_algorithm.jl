@@ -35,7 +35,7 @@ function sample(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64;T = 1000
             x[t+1] = a₀ * x[t] + a₁ * x₀ + b₀ * u[t] + b₁ * u₀ + w
             gain[t] = -u[t]/x[t]
             cost[t] = x[t] * x[t]
-            regret[t] = cost[t] - j_optimal
+            regret[t] = x[t] * x[t] - j_optimal
         else
             u[t] = -1/θ[t][3] * (θ[t][1]*x[t] + θ[t][2]*x[t-1] + θ[t][4]*u[t-1])
             ϕ[t] = [x[t];x[t-1];u[t];u[t-1]]
@@ -44,7 +44,7 @@ function sample(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64;T = 1000
             x[t+1] = a₀ * x[t] + a₁ * x[t-1] + b₀ * u[t] + b₁ * u[t-1] + w
             gain[t] = -u[t]/x[t]
             cost[t] = cost[t-1] + x[t] * x[t]
-            regret[t] = regret[t-1] + cost[t] - j_optimal
+            regret[t] = regret[t-1] + x[t] * x[t] - j_optimal
         avg_cost[t] = cost[t]/t
         θ[t+1] = θ[t] + ϕ[t]/r * (x[t+1] - ϕ'[t] * θ[t])
         end
@@ -93,7 +93,7 @@ function simulation(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64; T =
         end
     end
 
-    X = reshape([log(t) for t = 100:T],9901,1)
+    X = reshape([log(10,t) for t = 100:T],9901,1)
     Y = reshape(avg_regret[100:T],9901,1)
     regr = LinearRegression()
     fit!(regr,X,Y)
@@ -102,11 +102,11 @@ function simulation(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64; T =
     intercept = float(regr.intercept_)
     pyplt.scatter(X, Y, color ="blue")
     pyplt.plot(X, y_pred, color ="red")
-    pyplt.text(5,7.5,"slope = $slope")
-    pyplt.text(5,6.5,"intercept = $intercept")
+    pyplt.text(2,1.4,"slope = $slope")
+    print(slope)
     pyplt.xlabel("logt")
     pyplt.ylabel("log(average regret)")
     pyplt.title("log(average regret) vs log(t) for SG")
-    pyplt.savefig("average cost vs log t SG.png")
+    pyplt.savefig("log average regret vs log t SG.png")
 
 end
