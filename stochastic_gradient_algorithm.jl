@@ -54,7 +54,8 @@ function sample(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64;T = 1000
 
 end
 
-function simulation(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64; T = 10000, N = 1000)
+function simulation(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64; T = 10000, N = 500)
+    j_optimal = 1
     avg_cost  = [ zeros(T) for n = 1:N ]
     gain = [ zeros(T) for n = 1:N ]
     regret = [ zeros(T) for n = 1:N ]
@@ -65,12 +66,12 @@ function simulation(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64; T =
         avg_cost[n],gain[n],regret[n]= sample(a₀,a₁,b₀,b₁; T=T)
 
 
-        # pyplt.plot([t for t = 1:T],avg[n])
+        # pyplt.plot([t for t = 1:T],avg_cost[n])
         # pyplt.axis([0,T,0,10])
         # pyplt.xlabel("t")
         # pyplt.ylabel("cost/t")
-        # pyplt.title("cost function value/t vs t ")
-        # pyplt.savefig("cost function value.png")
+        # pyplt.title("cost function value/t vs t (optimal cost = $j_optimal)")
+        # pyplt.savefig("average cost vs t for SG.png")
 
         # pyplt.plot([t for t = 1:T],gain[n])
         # pyplt.axis([0,T,0,10])

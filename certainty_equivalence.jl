@@ -10,7 +10,7 @@ using ScikitLearn: predict
 @pyimport matplotlib.pyplot as pyplt
 
 
-function sample(a::Float64, b::Float64; T = 10000)
+function sample(a::Float64, b::Float64; T = 100000)
     cost = zeros(T)
     regret = zeros(T)
     avg_cost = zeros(T)
@@ -54,7 +54,7 @@ function sample(a::Float64, b::Float64; T = 10000)
 
 end
 
-function simulation(a::Float64, b::Float64; T = 10000, N = 100)
+function simulation(a::Float64, b::Float64; T = 100000, N = 100)
     avg_cost = [zeros(T) for n = 1:N]
     gain = [zeros(T) for n = 1:N]
     regret = [zeros(T) for n = 1:N]
@@ -70,20 +70,48 @@ function simulation(a::Float64, b::Float64; T = 10000, N = 100)
         # pyplt.savefig("average cost vs t for CE.png")
     end
 
-    #plot log(average regret) vs log t
+    #plot average regret) vs sqrt t
+    # for t = 1:T
+    #     temp = zeros(N)
+    #     for n = 1:N
+    #         temp[n] = regret[n][t]
+    #     end
+    #     if mean(temp) < 0
+    #         avg_regret[t] = 0
+    #     else
+    #         avg_regret[t] = mean(temp)
+    #     end
+    # end
+    #
+    # X = reshape([sqrt(t) for t = 100:T],(T-99),1)
+    # Y = reshape(avg_regret[100:T],(T-99),1)
+    # regr = LinearRegression()
+    # fit!(regr,X,Y)
+    # y_pred = predict(regr,X)
+    # slope = float(regr.coef_)
+    # intercept = float(regr.intercept_)
+    # pyplt.scatter(X, Y, color ="blue")
+    # pyplt.plot(X, y_pred, color ="red")
+    # print(slope)
+    # pyplt.xlabel("sqrtt")
+    # pyplt.ylabel("average regret")
+    # pyplt.title("average regret vs sqrt t) for CE(slope = $slope)")
+    # pyplt.savefig("average regret vs sqrt t CE.png")
+
+    #plot log(average regret) vs log(t)
     for t = 1:T
         temp = zeros(N)
-        for n = 1:N
+        for n = 1
             temp[n] = regret[n][t]
         end
         if mean(temp) < 0
             avg_regret[t] = 0
         else
-            avg_regret[t] = mean(temp)
+            avg_regret[t] = log(10,mean(temp))
         end
     end
 
-    X = reshape([sqrt(t) for t = 100:T],(T-99),1)
+    X = reshape([log(10,t) for t = 100:T],(T-99),1)
     Y = reshape(avg_regret[100:T],(T-99),1)
     regr = LinearRegression()
     fit!(regr,X,Y)
@@ -92,12 +120,9 @@ function simulation(a::Float64, b::Float64; T = 10000, N = 100)
     intercept = float(regr.intercept_)
     pyplt.scatter(X, Y, color ="blue")
     pyplt.plot(X, y_pred, color ="red")
-    print(slope)
-    pyplt.xlabel("sqrtt")
-    pyplt.ylabel("average regret")
-    pyplt.title("average regret vs sqrt t) for CE(slope = $slope)")
-    pyplt.savefig("average regret vs sqrt t CE.png")
-
-
+    pyplt.xlabel("logt")
+    pyplt.ylabel("log(average regret)")
+    pyplt.title("log(average regret) vs log(t) for CE(slope = $slope)")
+    pyplt.savefig("log average regret vs log t CE.png")
 
 end
