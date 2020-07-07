@@ -57,8 +57,9 @@ function sample(a::Float64,b::Float64;T = 40000,J = 300)
 
             u = Gⱼ * x
             w = randn()
-            x = a*x+b*u+w
             z = [x;u]
+            x = a*x+b*u+w
+
             θ̂ = θ̂ + (Σ*z*(x-z'*θ̂))/(1+z'*Σ*z)
             Σ = Σ - Symmetric((Σ*z*z'*Σ))/(1+z'*Σ*z)
             # println("det sig = $det_sig")
