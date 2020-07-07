@@ -54,7 +54,7 @@ function sample(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64;T = 1000
 
 end
 
-function simulation(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64; T = 10000, N = 500)
+function simulation(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64; T = 10000, N = 1000)
     j_optimal = 1
     avg_cost  = [ zeros(T) for n = 1:N ]
     gain = [ zeros(T) for n = 1:N ]
