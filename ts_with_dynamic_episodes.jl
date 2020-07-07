@@ -75,6 +75,8 @@ function simulation(a::Float64,b::Float64;T = 40000 , N = 100)
     avg_cost  = [ zeros(T) for n = 1:N ]
     regret = [ zeros(T) for n = 1:N ]
     avg_regret = zeros(T)
+    bot = zeros(T)
+    top = zeros(T)
     pyplt.clf()
     for n in 1:N
         avg_cost[n],regret[n]= sample(a,b)
@@ -121,11 +123,9 @@ function simulation(a::Float64,b::Float64;T = 40000 , N = 100)
         for n = 1:N
             temp[n] = regret[n][t]
         end
-        if mean(temp) < 0
-            avg_regret[t] = 0
-        else
-            avg_regret[t] = mean(temp)
-        end
+        avg_regret[t] = quantile!(temp,0.5)
+        bot[t] = quantile!(temp,0.25)
+        top[t] = quantile!(temp,0.75)
     end
 
     X = reshape([sqrt(t) for t = 100:T],(T-99),1)
@@ -135,7 +135,8 @@ function simulation(a::Float64,b::Float64;T = 40000 , N = 100)
     y_pred = predict(regr,X)
     slope = float(regr.coef_)
     intercept = float(regr.intercept_)
-    pyplt.scatter(X, Y, color ="blue")
+    pyplt.fill_between([sqrt(t) for t = 100:T],bot[100:T],top[100:T],color="gray")
+    pyplt.plot(X, Y, color ="blue")
     pyplt.plot(X, y_pred, color ="red")
     pyplt.xlabel("sqrtt")
     pyplt.ylabel("average regret")
