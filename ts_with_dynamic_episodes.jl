@@ -12,7 +12,7 @@ using ControlSystems
 @pyimport matplotlib.pyplot as pyplt
 
 
-function sample(a::Float64,b::Float64;T = 40000,J = 300)
+function sample(a::Float64,b::Float64;T = 100000,J = 500)
     cost = Float64[]
     avg_cost = Float64[]
     regret = Float64[]
@@ -71,7 +71,7 @@ function sample(a::Float64,b::Float64;T = 40000,J = 300)
 
 end
 
-function simulation(a::Float64,b::Float64;T = 40000 , N = 100)
+function simulation(a::Float64,b::Float64;T = 100000 , N = 1000)
     j_optimal = tr(dare(a,b,1.0,1.0))
     avg_cost  = [ zeros(T) for n = 1:N ]
     regret = [ zeros(T) for n = 1:N ]
@@ -81,6 +81,7 @@ function simulation(a::Float64,b::Float64;T = 40000 , N = 100)
     pyplt.clf()
     for n in 1:N
         avg_cost[n],regret[n]= sample(a,b)
+        println(n)
         # pyplt.plot([t for t = 1:T],avg_cost[n])
         # pyplt.axis([0,T,0,10])
         # pyplt.xlabel("t")

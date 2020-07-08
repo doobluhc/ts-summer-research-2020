@@ -45,7 +45,7 @@ function sample(a::Float64,b::Float64;T = 100000)
     end
     return avg,gain,regret
 end
-function simulation(a::Float64,b::Float64;T = 100000, N = 50)
+function simulation(a::Float64,b::Float64;T = 100000, N = 1000)
     j_optimal = 1
     avg_cost  = [ zeros(T) for n = 1:N ]
     gain = [ zeros(T) for n = 1:N ]
@@ -56,6 +56,7 @@ function simulation(a::Float64,b::Float64;T = 100000, N = 50)
     pyplt.clf()
     for n in 1:N
         avg_cost[n],gain[n],regret[n] = sample(a,b)
+        println(n)
         # pyplt.plot([t for t = 1:T],avg_cost[n])
         # pyplt.axis([0,T,0,10])
         # pyplt.xlabel("t")
@@ -102,7 +103,7 @@ function simulation(a::Float64,b::Float64;T = 100000, N = 50)
         bot[t] = quantile!(temp,0.25)
         top[t] = quantile!(temp,0.75)
     end
-    
+
     X = reshape([sqrt(t) for t = 100:T],(T-99),1)
     Y = reshape(avg_regret[100:T],(T-99),1)
     regr = LinearRegression()

@@ -12,7 +12,7 @@ using ScikitLearn: predict
 @pyimport matplotlib.pyplot as pyplt
 
 
-function sample(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64;T = 10000)
+function sample(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64;T = 100000)
     cost = zeros(T)
     regret = zeros(T)
     gain = zeros(T)
@@ -54,7 +54,7 @@ function sample(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64;T = 1000
 
 end
 
-function simulation(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64; T = 10000, N = 1000)
+function simulation(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64; T = 100000, N = 1000)
     j_optimal = 1
     avg_cost  = [ zeros(T) for n = 1:N ]
     gain = [ zeros(T) for n = 1:N ]
@@ -66,6 +66,7 @@ function simulation(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64; T =
 
     for n = 1:N
         avg_cost[n],gain[n],regret[n]= sample(a₀,a₁,b₀,b₁; T=T)
+        println(n)
 
         # pyplt.plot([t for t = 1:T],avg_cost[n])
         # pyplt.axis([0,T,0,10])

@@ -54,7 +54,7 @@ function sample(a::Float64, b::Float64; T = 100000)
 
 end
 
-function simulation(a::Float64, b::Float64; T = 100000, N = 100)
+function simulation(a::Float64, b::Float64; T = 100000, N = 1000)
     avg_cost = [zeros(T) for n = 1:N]
     gain = [zeros(T) for n = 1:N]
     regret = [zeros(T) for n = 1:N]
@@ -64,6 +64,7 @@ function simulation(a::Float64, b::Float64; T = 100000, N = 100)
     pyplt.clf()
     for n = 1:N
         avg_cost[n], gain[n], regret[n] = sample(a, b)
+        println(n)
         # pyplt.plot([t for t = 1:T],regret[n])
         # pyplt.axis([0,T,0,10])
         # pyplt.xlabel("t")
