@@ -104,13 +104,10 @@ function simulation(a::Float64, b::Float64; T = 1000, N = 100)
     #plot log(average regret) vs log(t)
     for t = 1:T
         temp = zeros(N)
-        for n = 1
+        for n = 1:N
             temp[n] = regret[n][t]
         end
-        if mean(temp) < 0
-            avg_regret[t] = 1
-        else
-            avg_regret[t] = mean(temp)
+        avg_regret[t] = mean(temp)
         end
         bot[t] = quantile!(temp,0.25)
         top[t] = quantile!(temp,0.75)
