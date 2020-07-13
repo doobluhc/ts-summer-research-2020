@@ -8,6 +8,7 @@ using ScikitLearn: fit!
 using ScikitLearn: predict
 @sk_import linear_model: LinearRegression
 @pyimport matplotlib.pyplot as pyplt
+@pyimport scipy.optimize as so
 
 
 function sample(a::Float64, b::Float64; T = 100000)
@@ -74,34 +75,6 @@ function simulation(a::Float64, b::Float64; T = 100000, N = 1000)
         # pyplt.savefig("average cost vs t for CE.png")
     end
 
-    #plot average regret vs sqrt t
-    # for t = 1:T
-    #     temp = zeros(N)
-    #     for n = 1:N
-    #         temp[n] = regret[n][t]
-    #     end
-    #     avg_regret[t] = quantile!(temp,0.5)
-    #     bot[t] = quantile!(temp,0.25)
-    #     top[t] = quantile!(temp,0.75)
-    # end
-    #
-    # X = reshape([sqrt(t) for t = 100:T],(T-99),1)
-    # Y = reshape(avg_regret[100:T],(T-99),1)
-    # regr = LinearRegression()
-    # fit!(regr,X,Y)
-    # y_pred = predict(regr,X)
-    # slope = float(regr.coef_)
-    # intercept = float(regr.intercept_)
-    # pyplt.fill_between([sqrt(t) for t = 100:T],bot[100:T],top[100:T],color="gray")
-    # pyplt.plot(X, Y, color ="blue")
-    # pyplt.plot(X, y_pred, color ="red")
-    # print(slope)
-    # pyplt.xlabel("sqrtt")
-    # pyplt.ylabel("average regret")
-    # pyplt.title("average regret vs sqrt t) for CE(slope = $slope)")
-    # pyplt.savefig("average regret vs sqrt t CE.png")
-
-    #plot log(average regret) vs log(t)
     for t = 1:T
         temp = zeros(N)
         for n = 1:N
@@ -111,23 +84,40 @@ function simulation(a::Float64, b::Float64; T = 100000, N = 1000)
         bot[t] = quantile!(temp,0.25)
         top[t] = quantile!(temp,0.75)
     end
+    #plot average regret vs sqrt t
+    pyplt.clf()
+    X = reshape([sqrt(t) for t = 10:T],(T-9),1)
+    Y = reshape(avg_regret[10:T],(T-9),1)
+    regr = LinearRegression()
+    fit!(regr,X,Y)
+    y_pred = predict(regr,X)
+    slope = float(regr.coef_)
+    intercept = float(regr.intercept_)
+    # pyplt.fill_between([sqrt(t) for t = 10:T],bot[10:T],top[10:T],color="gray")
+    pyplt.plot([sqrt(t) for t = 10:T], avg_regret[10:T], color ="blue")
+    pyplt.plot(X, y_pred, color ="red")
+    print(slope)
+    pyplt.xlabel("sqrtt")
+    pyplt.ylabel("average regret")
+    pyplt.title("average regret vs sqrt t) for CE(slope = $slope)")
+    pyplt.savefig("average regret vs sqrt t CE.png")
 
+    #plot log(average regret) vs log(t)
+    pyplt.clf()
     X = reshape(log.([t for t = 10:T]),(T-9),1)
     Y = reshape(log.(avg_regret[10:T]),(T-9),1)
     regr = LinearRegression()
     fit!(regr,X,Y)
     slope = float(regr.coef_)
     intercept = float(regr.intercept_)
-    timesteps = [t for t = 1:T]
-    y_fit = zeros(T)
-    for t = 10:T
-        y_fit[t] = exp(slope[1]*log(timesteps[t])+intercept[1])
-    end
+    y_pred = predict(regr,X)
     pyplt.plot(log.([t for t = 10:T]), log.(avg_regret[10:T]), color ="blue")
-    # pyplt.plot(log.([t for t = 10:T]), log.(y_fit[10:T]), color ="red")
+    pyplt.plot(X, y_pred, color ="red")
     pyplt.xlabel("logt")
     pyplt.ylabel("log(average regret)")
     pyplt.title("log(average regret) vs log(t) for CE(slope = $slope)")
     pyplt.savefig("log average regret vs log t CE.png")
+
+
 
 end

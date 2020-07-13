@@ -12,11 +12,11 @@ using ControlSystems
 @pyimport matplotlib.pyplot as pyplt
 
 
-function sample(a::Float64,b::Float64;T = 100000,J = 500)
+function sample(a::Float64,b::Float64;T = 100000,J = 600)
     cost = Float64[]
     avg_cost = Float64[]
     regret = Float64[]
-    j_optimal = tr(dare(a,b,1.0,1.0))
+    j_optimal = 1
     θ̃ = [0.0;0.0]
     θ̂ = [a;b]
     Σ = Symmetric([1.0 0.0;0.0 1.0])
@@ -37,21 +37,19 @@ function sample(a::Float64,b::Float64;T = 100000,J = 500)
 
         θ̃ = rand(MvNormal(θ̂,Σ))
         # println("θ̃ = $θ̃")
-
-        S = float(dare(θ̃[1],θ̃[2],1.0,1.0))
-        Gⱼ = -(1.0+b'*S[1]*b)^-1*b'*S[1]*a
+        Gⱼ = -θ̃[1]/θ̃[2]
         Σⱼ = Σ
         # println("det sigj = $det_sigj")
 
         while t <= (tⱼ + Tⱼ₋₁) && det(Σ) >= 0.5*det(Σⱼ)
             # println("t = $t #############")
             if t == 1
-                push!(cost,x*x+u*u)
+                push!(cost,x*x)
                 push!(regret,cost[t] - j_optimal)
                 push!(avg_cost,cost[t])
             else
-                push!(cost,cost[t-1] + x*x + u*u)
-                push!(regret,regret[t-1]+x*x+u*u-j_optimal)
+                push!(cost,cost[t-1] + x*x)
+                push!(regret,regret[t-1]+x*x-j_optimal)
                 push!(avg_cost,cost[t]/t)
             end
 
@@ -64,21 +62,22 @@ function sample(a::Float64,b::Float64;T = 100000,J = 500)
             Σ = Σ - Symmetric((Σ*z*z'*Σ))/(1+z'*Σ*z)
             # println("det sig = $det_sig")
             t += 1
-
+        end
+        if t > T
+            break
         end
     end
     return avg_cost[1:T],regret[1:T]
 
 end
 
-function simulation(a::Float64,b::Float64;T = 100000 , N = 1000)
-    j_optimal = tr(dare(a,b,1.0,1.0))
+function simulation(a::Float64,b::Float64;T = 100000 , N = 100)
     avg_cost  = [ zeros(T) for n = 1:N ]
     regret = [ zeros(T) for n = 1:N ]
     avg_regret = zeros(T)
     bot = zeros(T)
     top = zeros(T)
-    pyplt.clf()
+
     for n in 1:N
         avg_cost[n],regret[n]= sample(a,b)
         println(n)
@@ -90,55 +89,43 @@ function simulation(a::Float64,b::Float64;T = 100000 , N = 1000)
         # pyplt.savefig("average cost vs t for TSDE.png")
     end
 
-
-
-    #plot log(average regret) vs log t
-    # for t = 1:T
-    #     temp = zeros(N)
-    #     for n = 1
-    #         temp[n] = regret[n][t]
-    #     end
-    #     if mean(temp) < 0
-    #         avg_regret[t] = 0
-    #     else
-    #         avg_regret[t] = log(10,mean(temp))
-    #     end
-    # end
-    #
-    # X = reshape([log(10,t) for t = 1000:T],(T-999),1)
-    # Y = reshape(avg_regret[1000:T],(T-999),1)
-    # regr = LinearRegression()
-    # fit!(regr,X,Y)
-    # y_pred = predict(regr,X)
-    # slope = float(regr.coef_)
-    # intercept = float(regr.intercept_)
-    # pyplt.scatter(X, Y, color ="blue")
-    # pyplt.plot(X, y_pred, color ="red")
-    # pyplt.xlabel("logt")
-    # pyplt.ylabel("log(average regret)")
-    # pyplt.title("log(average regret) vs log(t) for TSDE(slope = $slope)")
-    # pyplt.savefig("log average regret vs log t TSDE.png")
-
-    #plot average regret vs sqrt t
     for t = 1:T
         temp = zeros(N)
         for n = 1:N
             temp[n] = regret[n][t]
         end
-        avg_regret[t] = quantile!(temp,0.5)
+        avg_regret[t] = mean(temp)
         bot[t] = quantile!(temp,0.25)
         top[t] = quantile!(temp,0.75)
     end
 
-    X = reshape([sqrt(t) for t = 100:T],(T-99),1)
-    Y = reshape(avg_regret[100:T],(T-99),1)
+    #plot log(average regret) vs log t
+    pyplt.clf()
+    X = reshape(log.([t for t = 10:T]),(T-9),1)
+    Y = reshape(log.(avg_regret[10:T]),(T-9),1)
     regr = LinearRegression()
     fit!(regr,X,Y)
     y_pred = predict(regr,X)
     slope = float(regr.coef_)
     intercept = float(regr.intercept_)
-    pyplt.fill_between([sqrt(t) for t = 100:T],bot[100:T],top[100:T],color="gray")
-    pyplt.plot(X, Y, color ="blue")
+    pyplt.plot(log.([t for t = 10:T]), log.(avg_regret[10:T]), color ="blue")
+    pyplt.plot(X, y_pred, color ="red")
+    pyplt.xlabel("logt")
+    pyplt.ylabel("log(average regret)")
+    pyplt.title("log(average regret) vs log(t) for TSDE(slope = $slope)")
+    pyplt.savefig("log average regret vs log t TSDE.png")
+
+    #plot average regret vs sqrt t
+    pyplt.clf()
+    X = reshape([sqrt(t) for t = 10:T],(T-9),1)
+    Y = reshape(avg_regret[10:T],(T-9),1)
+    regr = LinearRegression()
+    fit!(regr,X,Y)
+    y_pred = predict(regr,X)
+    slope = float(regr.coef_)
+    intercept = float(regr.intercept_)
+    # pyplt.fill_between([sqrt(t) for t = 100:T],bot[100:T],top[100:T],color="gray")
+    pyplt.plot([sqrt(t) for t = 10:T], avg_regret[10:T], color ="blue")
     pyplt.plot(X, y_pred, color ="red")
     pyplt.xlabel("sqrtt")
     pyplt.ylabel("average regret")

@@ -9,14 +9,14 @@ using ControlSystems
 @sk_import linear_model: LinearRegression
 @pyimport matplotlib.pyplot as pyplt
 
-function sample(a::Float64,b::Float64;T = 100000)
+function sample(a::Float64,b::Float64;T = 50000)
     cost = zeros(T)
     gain = zeros(T)
     avg = zeros(T)
     regret = zeros(T)
 
 
-    θ = [0.0;1.0]
+    θ̂ = [0.0;1.0]
     Σ = Symmetric([1.0 0.0;0.0 1.0])
     j_optimal = 1
     x = 0.0
@@ -33,19 +33,19 @@ function sample(a::Float64,b::Float64;T = 100000)
             avg[t] = cost[t]/t
         end
 
-        θ̂ = rand(MvNormal(θ, Σ))
-        gain[t] = θ̂[1]/θ̂[2]
+        θ̃ = rand(MvNormal(θ̂, Σ))
+        gain[t] = θ̃[1]/θ̃[2]
         u = -gain[t] * x
         z = [x;u]
         w = randn()
         x = a * x + b * u + w
-        θ = θ + Σ*z*(x-z'*θ)/(1+z'*Σ*z)
+        θ̂ = θ̂ + Σ*z*(x-z'*θ̂)/(1+z'*Σ*z)
         Σ = Σ - Symmetric(Σ*z*z'*Σ)/(1+z'*Σ*z)
 
     end
     return avg,gain,regret
 end
-function simulation(a::Float64,b::Float64;T = 100000, N = 1000)
+function simulation(a::Float64,b::Float64;T = 50000, N = 1000)
     j_optimal = 1
     avg_cost  = [ zeros(T) for n = 1:N ]
     gain = [ zeros(T) for n = 1:N ]
@@ -53,7 +53,7 @@ function simulation(a::Float64,b::Float64;T = 100000, N = 1000)
     avg_regret = zeros(T)
     bot = zeros(T)
     top = zeros(T)
-    pyplt.clf()
+
     for n in 1:N
         avg_cost[n],gain[n],regret[n] = sample(a,b)
         println(n)
@@ -65,54 +65,44 @@ function simulation(a::Float64,b::Float64;T = 100000, N = 1000)
         # pyplt.savefig("average cost vs t for TS.png")
     end
 
-    #plot log(average regret) vs log t
-    # for t = 1:T
-    #     temp = zeros(N)
-    #     for n = 1:N
-    #         temp[n] = regret[n][t]
-    #     end
-    #     avg_regret[t] = quantile!(temp,0.5)
-    #     bot[t] = quantile!(temp,0.25)
-    #     top[t] = quantile!(temp,0.75)
-    # end
-    #
-    # X = reshape([log(10,t) for t = 100:T],99901,1)
-    # Y = reshape(avg_regret[100:T],99901,1)
-    # regr = LinearRegression()
-    # fit!(regr,X,Y)
-    # y_pred = predict(regr,X)
-    # slope = float(regr.coef_)
-    # intercept = float(regr.intercept_)
-    # pyplt.fill_between([sqrt(t) for t = 100:T],bot[100:T],top[100:T],color="gray")
-    # pyplt.plot(X, Y, color ="blue")
-    # pyplt.plot(X, y_pred, color ="red")
-    # print(slope)
-    # pyplt.xlabel("logt")
-    # pyplt.ylabel("log(average regret)")
-    # pyplt.title("log(average regret) vs log(t) for TS(slope = $slope)")
-    # pyplt.savefig("log average regret vs log t TS.png")
-
-
-    #plot average regret vs sqrt t
     for t = 1:T
         temp = zeros(N)
         for n = 1:N
             temp[n] = regret[n][t]
         end
-        avg_regret[t] = quantile!(temp,0.5)
+        avg_regret[t] = mean(temp)
         bot[t] = quantile!(temp,0.25)
         top[t] = quantile!(temp,0.75)
     end
 
-    X = reshape([sqrt(t) for t = 100:T],(T-99),1)
-    Y = reshape(avg_regret[100:T],(T-99),1)
+    #plot log(average regret) vs log t
+    pyplt.clf()
+    X = reshape(log.([t for t = 10:T]),(T-9),1)
+    Y = reshape(log.(avg_regret[10:T]),(T-9),1)
     regr = LinearRegression()
     fit!(regr,X,Y)
     y_pred = predict(regr,X)
     slope = float(regr.coef_)
     intercept = float(regr.intercept_)
-    pyplt.fill_between([sqrt(t) for t = 100:T],bot[100:T],top[100:T],color="gray")
-    pyplt.plot(X, Y, color ="blue")
+    pyplt.plot(log.([t for t = 10:T]), log.(avg_regret[10:T]), color ="blue")
+    pyplt.plot(X, y_pred, color ="red")
+    pyplt.xlabel("logt")
+    pyplt.ylabel("log(average regret)")
+    pyplt.title("log(average regret) vs log(t) for TS(slope = $slope)")
+    pyplt.savefig("log average regret vs log t TS.png")
+
+
+    #plot average regret vs sqrt t
+    pyplt.clf()
+    X = reshape([sqrt(t) for t = 10:T],(T-9),1)
+    Y = reshape(avg_regret[10:T],(T-9),1)
+    regr = LinearRegression()
+    fit!(regr,X,Y)
+    y_pred = predict(regr,X)
+    slope = float(regr.coef_)
+    intercept = float(regr.intercept_)
+    # pyplt.fill_between([sqrt(t) for t = 10:T],bot[10:T],top[10:T],color="gray")
+    pyplt.plot([sqrt(t) for t = 10:T], avg_regret[10:T], color ="blue")
     pyplt.plot(X, y_pred, color ="red")
     print(slope)
     pyplt.xlabel("sqrtt")
