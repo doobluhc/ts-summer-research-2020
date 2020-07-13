@@ -10,7 +10,7 @@ using ScikitLearn: predict
 @pyimport matplotlib.pyplot as pyplt
 
 
-function sample(a::Float64, b::Float64; T = 1000)
+function sample(a::Float64, b::Float64; T = 100000)
     cost = zeros(T)
     regret = zeros(T)
     avg_cost = zeros(T)
@@ -55,7 +55,7 @@ function sample(a::Float64, b::Float64; T = 1000)
 
 end
 
-function simulation(a::Float64, b::Float64; T = 1000, N = 100)
+function simulation(a::Float64, b::Float64; T = 100000, N = 1000)
     avg_cost = [zeros(T) for n = 1:N]
     gain = [zeros(T) for n = 1:N]
     regret = [zeros(T) for n = 1:N]
@@ -108,26 +108,23 @@ function simulation(a::Float64, b::Float64; T = 1000, N = 100)
             temp[n] = regret[n][t]
         end
         avg_regret[t] = mean(temp)
-        end
         bot[t] = quantile!(temp,0.25)
         top[t] = quantile!(temp,0.75)
     end
 
-    X = reshape([log(t) for t = 100:T],(T-99),1)
-    Y = reshape(log.(avg_regret[100:T]),(T-99),1)
+    X = reshape(log.([t for t = 10:T]),(T-9),1)
+    Y = reshape(log.(avg_regret[10:T]),(T-9),1)
     regr = LinearRegression()
     fit!(regr,X,Y)
     slope = float(regr.coef_)
     intercept = float(regr.intercept_)
     timesteps = [t for t = 1:T]
     y_fit = zeros(T)
-    for t = 100:T
+    for t = 10:T
         y_fit[t] = exp(slope[1]*log(timesteps[t])+intercept[1])
     end
-    y_fit = map((x)->exp(slope*x+intercept),[log(t) for t = 100:T])
-
-    pyplt.plot(log.([t for t = 1:T]), log.(avg_regret), color ="blue")
-    # pyplt.loglog([t for t = 100:T], y_fit[100:T], color ="red")
+    pyplt.plot(log.([t for t = 10:T]), log.(avg_regret[10:T]), color ="blue")
+    # pyplt.plot(log.([t for t = 10:T]), log.(y_fit[10:T]), color ="red")
     pyplt.xlabel("logt")
     pyplt.ylabel("log(average regret)")
     pyplt.title("log(average regret) vs log(t) for CE(slope = $slope)")
