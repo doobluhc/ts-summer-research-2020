@@ -11,8 +11,9 @@ using LsqFit
 @pyimport matplotlib.pyplot as pyplt
 
 
-
-function sample(a::Float64, b::Float64; T = 100000)
+module certainty_equivalence
+export sample,simulation
+function sample(a::Float64, b::Float64; T = 10000)
     cost = zeros(T)
     regret = zeros(T)
     avg_cost = zeros(T)
@@ -57,7 +58,7 @@ function sample(a::Float64, b::Float64; T = 100000)
 
 end
 
-function simulation(a::Float64, b::Float64; T = 100000, N = 1000)
+function simulation(a::Float64, b::Float64; T = 10000, N = 100)
     avg_cost = [zeros(T) for n = 1:N]
     gain = [zeros(T) for n = 1:N]
     regret = [zeros(T) for n = 1:N]
@@ -79,13 +80,13 @@ function simulation(a::Float64, b::Float64; T = 100000, N = 1000)
             regret_moving_average[n][t] = window_average
             t = t+1
         end
-        println(n)
-        # pyplt.plot([t for t = 1:T],regret[n])
+        # println(n)
+        pyplt.plot([t for t = 1:T],gain[n])
         # pyplt.axis([0,T,0,10])
-        # pyplt.xlabel("t")
-        # pyplt.ylabel("cost/t")
-        # pyplt.title("cost function value/t vs t ")
-        # pyplt.savefig("average cost vs t for CE.png")
+        pyplt.xlabel("t")
+        pyplt.ylabel("cost/t")
+        pyplt.title("cost function value/t vs t ")
+        pyplt.savefig("average cost vs t for CE.png")
     end
 
 
@@ -153,4 +154,5 @@ function simulation(a::Float64, b::Float64; T = 100000, N = 1000)
 
 
 
+end
 end

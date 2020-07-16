@@ -11,6 +11,7 @@ using ScikitLearn: predict
 @sk_import linear_model: LinearRegression
 @pyimport matplotlib.pyplot as pyplt
 
+module stochastic_gradient_algorithm
 
 function sample(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64;T = 100000)
     cost = zeros(T)
@@ -127,4 +128,5 @@ function simulation(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64; T =
     pyplt.title("average regret vs sqrt t for SG(slope = $slope)")
     pyplt.savefig("average regret vs sqrt t SG.png")
 
+end
 end

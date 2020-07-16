@@ -8,7 +8,7 @@ using ScikitLearn: predict
 using ControlSystems
 @sk_import linear_model: LinearRegression
 @pyimport matplotlib.pyplot as pyplt
-
+module thompson_sampling
 function sample(a::Float64,b::Float64;T = 50000)
     cost = zeros(T)
     gain = zeros(T)
@@ -110,4 +110,5 @@ function simulation(a::Float64,b::Float64;T = 50000, N = 1000)
     pyplt.title("average regret vs sqrt t for TS(slope = $slope)")
     pyplt.savefig("average regret vs sqrt t TS.png")
 
+end
 end

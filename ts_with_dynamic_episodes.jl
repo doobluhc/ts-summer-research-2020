@@ -11,7 +11,7 @@ using ControlSystems
 @sk_import linear_model: LinearRegression
 @pyimport matplotlib.pyplot as pyplt
 
-
+module ts_with_dynamic_episodes
 function sample(a::Float64,b::Float64;T = 100000,J = 600)
     cost = Float64[]
     avg_cost = Float64[]
@@ -132,4 +132,5 @@ function simulation(a::Float64,b::Float64;T = 100000 , N = 100)
     pyplt.title("average regret vs sqrt t for TSDE(slope = $slope)")
     pyplt.savefig("average regret vs sqrt t TSDE.png")
 
+end
 end
