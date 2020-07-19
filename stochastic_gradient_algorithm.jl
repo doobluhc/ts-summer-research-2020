@@ -11,7 +11,14 @@ using ScikitLearn: predict
 @sk_import linear_model: LinearRegression
 @pyimport matplotlib.pyplot as pyplt
 
-module stochastic_gradient_algorithm
+abstract type Algorithm end
+
+
+mutable struct SG <: Algorithm
+    a::Float64
+    b::Float64
+    T::Int64
+end
 
 function sample(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64;T = 100000)
     cost = zeros(T)
@@ -51,82 +58,81 @@ function sample(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64;T = 1000
         end
     end
 
-    return avg_cost,gain,regret
+    return cost,avg_cost,gain,regret
 
 end
 
-function simulation(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64; T = 100000, N = 1000)
-    j_optimal = 1
-    avg_cost  = [ zeros(T) for n = 1:N ]
-    gain = [ zeros(T) for n = 1:N ]
-    regret = [ zeros(T) for n = 1:N ]
-    avg_regret = zeros(T)
-    bot = zeros(T)
-    top = zeros(T)
-
-
-    for n = 1:N
-        avg_cost[n],gain[n],regret[n]= sample(a₀,a₁,b₀,b₁; T=T)
-        println(n)
-
-        # pyplt.plot([t for t = 1:T],avg_cost[n])
-        # pyplt.axis([0,T,0,10])
-        # pyplt.xlabel("t")
-        # pyplt.ylabel("cost/t")
-        # pyplt.title("cost function value/t vs t (optimal cost = $j_optimal)")
-        # pyplt.savefig("average cost vs t for SG.png")
-
-        # pyplt.plot([t for t = 1:T],gain[n])
-        # pyplt.axis([0,T,0,10])
-        # pyplt.xlabel("t")
-        # pyplt.ylabel("gain")
-        # pyplt.title("gain vs t ")
-        # pyplt.savefig("gain.png")
-
-    end
-    for t = 1:T
-        temp = zeros(N)
-        for n = 1:N
-            temp[n] = regret[n][t]
-        end
-        avg_regret[t] = mean(temp)
-        bot[t] = quantile!(temp,0.25)
-        top[t] = quantile!(temp,0.75)
-    end
-    #plot log(average regret) vs log t
-    pyplt.clf()
-    X = reshape(log.([t for t = 10:T]),(T-9),1)
-    Y = reshape(log.(avg_regret[10:T]),(T-9),1)
-    regr = LinearRegression()
-    fit!(regr,X,Y)
-    y_pred = predict(regr,X)
-    slope = float(regr.coef_)
-    intercept = float(regr.intercept_)
-    # pyplt.fill_between([sqrt(t) for t = 10:T],bot[10:T],top[10:T],color="gray")
-    pyplt.plot(log.([t for t = 10:T]), log.(avg_regret[10:T]), color ="blue")
-    pyplt.plot(X, y_pred, color ="red")
-    pyplt.xlabel("logt")
-    pyplt.ylabel("log(average regret)")
-    pyplt.title("log(average regret) vs log(t) for SG(slope = $slope)")
-    pyplt.savefig("log average regret vs log t SG.png")
-
-    #plot average regret) vs sqrt t
-    pyplt.clf()
-    X = reshape([sqrt(t) for t = 10:T],(T-9),1)
-    Y = reshape(avg_regret[10:T],(T-9),1)
-    regr = LinearRegression()
-    fit!(regr,X,Y)
-    y_pred = predict(regr,X)
-    slope = float(regr.coef_)
-    intercept = float(regr.intercept_)
-    # pyplt.fill_between([sqrt(t) for t = 10:T],bot[10:T],top[10:T],color="gray")
-    pyplt.plot([sqrt(t) for t = 10:T], avg_regret[10:T], color ="blue")
-    pyplt.plot(X, y_pred, color ="red")
-    print(slope)
-    pyplt.xlabel("sqrtt")
-    pyplt.ylabel("average regret")
-    pyplt.title("average regret vs sqrt t for SG(slope = $slope)")
-    pyplt.savefig("average regret vs sqrt t SG.png")
-
-end
-end
+# function simulation(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64; T = 100000, N = 1000)
+#     j_optimal = 1
+#     avg_cost  = [ zeros(T) for n = 1:N ]
+#     gain = [ zeros(T) for n = 1:N ]
+#     regret = [ zeros(T) for n = 1:N ]
+#     avg_regret = zeros(T)
+#     bot = zeros(T)
+#     top = zeros(T)
+#
+#
+#     for n = 1:N
+#         avg_cost[n],gain[n],regret[n]= sample(a₀,a₁,b₀,b₁; T=T)
+#         println(n)
+#
+#         # pyplt.plot([t for t = 1:T],avg_cost[n])
+#         # pyplt.axis([0,T,0,10])
+#         # pyplt.xlabel("t")
+#         # pyplt.ylabel("cost/t")
+#         # pyplt.title("cost function value/t vs t (optimal cost = $j_optimal)")
+#         # pyplt.savefig("average cost vs t for SG.png")
+#
+#         # pyplt.plot([t for t = 1:T],gain[n])
+#         # pyplt.axis([0,T,0,10])
+#         # pyplt.xlabel("t")
+#         # pyplt.ylabel("gain")
+#         # pyplt.title("gain vs t ")
+#         # pyplt.savefig("gain.png")
+#
+#     end
+#     for t = 1:T
+#         temp = zeros(N)
+#         for n = 1:N
+#             temp[n] = regret[n][t]
+#         end
+#         avg_regret[t] = mean(temp)
+#         bot[t] = quantile!(temp,0.25)
+#         top[t] = quantile!(temp,0.75)
+#     end
+#     #plot log(average regret) vs log t
+#     pyplt.clf()
+#     X = reshape(log.([t for t = 10:T]),(T-9),1)
+#     Y = reshape(log.(avg_regret[10:T]),(T-9),1)
+#     regr = LinearRegression()
+#     fit!(regr,X,Y)
+#     y_pred = predict(regr,X)
+#     slope = float(regr.coef_)
+#     intercept = float(regr.intercept_)
+#     # pyplt.fill_between([sqrt(t) for t = 10:T],bot[10:T],top[10:T],color="gray")
+#     pyplt.plot(log.([t for t = 10:T]), log.(avg_regret[10:T]), color ="blue")
+#     pyplt.plot(X, y_pred, color ="red")
+#     pyplt.xlabel("logt")
+#     pyplt.ylabel("log(average regret)")
+#     pyplt.title("log(average regret) vs log(t) for SG(slope = $slope)")
+#     pyplt.savefig("log average regret vs log t SG.png")
+#
+#     #plot average regret) vs sqrt t
+#     pyplt.clf()
+#     X = reshape([sqrt(t) for t = 10:T],(T-9),1)
+#     Y = reshape(avg_regret[10:T],(T-9),1)
+#     regr = LinearRegression()
+#     fit!(regr,X,Y)
+#     y_pred = predict(regr,X)
+#     slope = float(regr.coef_)
+#     intercept = float(regr.intercept_)
+#     # pyplt.fill_between([sqrt(t) for t = 10:T],bot[10:T],top[10:T],color="gray")
+#     pyplt.plot([sqrt(t) for t = 10:T], avg_regret[10:T], color ="blue")
+#     pyplt.plot(X, y_pred, color ="red")
+#     print(slope)
+#     pyplt.xlabel("sqrtt")
+#     pyplt.ylabel("average regret")
+#     pyplt.title("average regret vs sqrt t for SG(slope = $slope)")
+#     pyplt.savefig("average regret vs sqrt t SG.png")
+#
+# end
