@@ -1,15 +1,9 @@
 using DifferentialEquations
 using LinearAlgebra
-using PyPlot
-using PyCall
 using Statistics: mean
 using DataFrames
 using ControlSystems
-using ScikitLearn
-using ScikitLearn: fit!
-using ScikitLearn: predict
-@sk_import linear_model: LinearRegression
-@pyimport matplotlib.pyplot as pyplt
+
 
 abstract type Algorithm end
 
@@ -57,8 +51,8 @@ function sample(a₀::Float64,a₁::Float64,b₀::Float64,b₁::Float64;T = 1000
         θ[t+1] = θ[t] + ϕ[t]/r * (x[t+1] - ϕ'[t] * θ[t])
         end
     end
-
-    return cost,avg_cost,gain,regret
+    algo_name = "SG"
+    return cost,avg_cost,gain,regret,algo_name
 
 end
 

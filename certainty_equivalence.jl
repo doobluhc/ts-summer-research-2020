@@ -1,14 +1,7 @@
-using PyPlot
-using PyCall
+
 using ControlSystems
 using LinearAlgebra
 using Statistics
-using ScikitLearn
-using ScikitLearn: fit!
-using ScikitLearn: predict
-using LsqFit
-@sk_import linear_model: LinearRegression
-@pyimport matplotlib.pyplot as pyplt
 
 
 abstract type Algorithm end
@@ -22,6 +15,7 @@ end
 
 
 function sample(ce::CE)
+
     a = ce.a
     b = ce.b
     T = ce.T
@@ -65,8 +59,8 @@ function sample(ce::CE)
         Σ = Σ - Σ * z * z' * Σ / (1 + z' * Σ * z)
     end
 
-
-    return cost, avg_cost, gain, regret
+    algo_name = "CE"
+    return cost, avg_cost, gain, regret,algo_name
 
 end
 

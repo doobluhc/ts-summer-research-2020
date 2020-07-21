@@ -1,20 +1,30 @@
-using PyPlot
-using PyCall
+
 using Distributions
 using Statistics
 using LinearAlgebra
 using LinearAlgebra: inv
-using ScikitLearn
-using ScikitLearn: fit!
-using ScikitLearn: predict
 using ControlSystems
-@sk_import linear_model: LinearRegression
-@pyimport matplotlib.pyplot as pyplt
 
-module ts_with_dynamic_episodes
-function sample(a::Float64,b::Float64;T = 100000,J = 600)
+abstract type Algorithm end
+
+
+mutable struct TSDE <: Algorithm
+    a::Float64
+    b::Float64
+    T::Int64
+end
+
+
+function sample(tsde::TSDE)
+
+    J = 600
+    a = tsde.a
+    b = tsde.b
+    T = tsde.T
+
     cost = Float64[]
     avg_cost = Float64[]
+    gain = Float64[]
     regret = Float64[]
     j_optimal = 1
     θ̃ = [0.0;0.0]
@@ -47,10 +57,12 @@ function sample(a::Float64,b::Float64;T = 100000,J = 600)
                 push!(cost,x*x)
                 push!(regret,cost[t] - j_optimal)
                 push!(avg_cost,cost[t])
+                push!(gain,-Gⱼ)
             else
                 push!(cost,cost[t-1] + x*x)
                 push!(regret,regret[t-1]+x*x-j_optimal)
                 push!(avg_cost,cost[t]/t)
+                push!(gain,-Gⱼ)
             end
 
             u = Gⱼ * x
@@ -67,70 +79,70 @@ function sample(a::Float64,b::Float64;T = 100000,J = 600)
             break
         end
     end
-    return avg_cost[1:T],regret[1:T]
+    algo_name = "TSDE"
+    return cost[1:T],avg_cost[1:T],gain[1:T],regret[1:T],algo_name
 
 end
 
-function simulation(a::Float64,b::Float64;T = 100000 , N = 100)
-    avg_cost  = [ zeros(T) for n = 1:N ]
-    regret = [ zeros(T) for n = 1:N ]
-    avg_regret = zeros(T)
-    bot = zeros(T)
-    top = zeros(T)
-
-    for n in 1:N
-        avg_cost[n],regret[n]= sample(a,b)
-        println(n)
-        # pyplt.plot([t for t = 1:T],avg_cost[n])
-        # pyplt.axis([0,T,0,10])
-        # pyplt.xlabel("t")
-        # pyplt.ylabel("cost/t")
-        # pyplt.title("cost function value/t vs t (optimal cost = $j_optimal)")
-        # pyplt.savefig("average cost vs t for TSDE.png")
-    end
-
-    for t = 1:T
-        temp = zeros(N)
-        for n = 1:N
-            temp[n] = regret[n][t]
-        end
-        avg_regret[t] = mean(temp)
-        bot[t] = quantile!(temp,0.25)
-        top[t] = quantile!(temp,0.75)
-    end
-
-    #plot log(average regret) vs log t
-    pyplt.clf()
-    X = reshape(log.([t for t = 10:T]),(T-9),1)
-    Y = reshape(log.(avg_regret[10:T]),(T-9),1)
-    regr = LinearRegression()
-    fit!(regr,X,Y)
-    y_pred = predict(regr,X)
-    slope = float(regr.coef_)
-    intercept = float(regr.intercept_)
-    pyplt.plot(log.([t for t = 10:T]), log.(avg_regret[10:T]), color ="blue")
-    pyplt.plot(X, y_pred, color ="red")
-    pyplt.xlabel("logt")
-    pyplt.ylabel("log(average regret)")
-    pyplt.title("log(average regret) vs log(t) for TSDE(slope = $slope)")
-    pyplt.savefig("log average regret vs log t TSDE.png")
-
-    #plot average regret vs sqrt t
-    pyplt.clf()
-    X = reshape([sqrt(t) for t = 10:T],(T-9),1)
-    Y = reshape(avg_regret[10:T],(T-9),1)
-    regr = LinearRegression()
-    fit!(regr,X,Y)
-    y_pred = predict(regr,X)
-    slope = float(regr.coef_)
-    intercept = float(regr.intercept_)
-    # pyplt.fill_between([sqrt(t) for t = 100:T],bot[100:T],top[100:T],color="gray")
-    pyplt.plot([sqrt(t) for t = 10:T], avg_regret[10:T], color ="blue")
-    pyplt.plot(X, y_pred, color ="red")
-    pyplt.xlabel("sqrtt")
-    pyplt.ylabel("average regret")
-    pyplt.title("average regret vs sqrt t for TSDE(slope = $slope)")
-    pyplt.savefig("average regret vs sqrt t TSDE.png")
-
-end
-end
+# function simulation(a::Float64,b::Float64;T = 100000 , N = 100)
+#     avg_cost  = [ zeros(T) for n = 1:N ]
+#     regret = [ zeros(T) for n = 1:N ]
+#     avg_regret = zeros(T)
+#     bot = zeros(T)
+#     top = zeros(T)
+#
+#     for n in 1:N
+#         avg_cost[n],regret[n]= sample(a,b)
+#         println(n)
+#         # pyplt.plot([t for t = 1:T],avg_cost[n])
+#         # pyplt.axis([0,T,0,10])
+#         # pyplt.xlabel("t")
+#         # pyplt.ylabel("cost/t")
+#         # pyplt.title("cost function value/t vs t (optimal cost = $j_optimal)")
+#         # pyplt.savefig("average cost vs t for TSDE.png")
+#     end
+#
+#     for t = 1:T
+#         temp = zeros(N)
+#         for n = 1:N
+#             temp[n] = regret[n][t]
+#         end
+#         avg_regret[t] = mean(temp)
+#         bot[t] = quantile!(temp,0.25)
+#         top[t] = quantile!(temp,0.75)
+#     end
+#
+#     #plot log(average regret) vs log t
+#     pyplt.clf()
+#     X = reshape(log.([t for t = 10:T]),(T-9),1)
+#     Y = reshape(log.(avg_regret[10:T]),(T-9),1)
+#     regr = LinearRegression()
+#     fit!(regr,X,Y)
+#     y_pred = predict(regr,X)
+#     slope = float(regr.coef_)
+#     intercept = float(regr.intercept_)
+#     pyplt.plot(log.([t for t = 10:T]), log.(avg_regret[10:T]), color ="blue")
+#     pyplt.plot(X, y_pred, color ="red")
+#     pyplt.xlabel("logt")
+#     pyplt.ylabel("log(average regret)")
+#     pyplt.title("log(average regret) vs log(t) for TSDE(slope = $slope)")
+#     pyplt.savefig("log average regret vs log t TSDE.png")
+#
+#     #plot average regret vs sqrt t
+#     pyplt.clf()
+#     X = reshape([sqrt(t) for t = 10:T],(T-9),1)
+#     Y = reshape(avg_regret[10:T],(T-9),1)
+#     regr = LinearRegression()
+#     fit!(regr,X,Y)
+#     y_pred = predict(regr,X)
+#     slope = float(regr.coef_)
+#     intercept = float(regr.intercept_)
+#     # pyplt.fill_between([sqrt(t) for t = 100:T],bot[100:T],top[100:T],color="gray")
+#     pyplt.plot([sqrt(t) for t = 10:T], avg_regret[10:T], color ="blue")
+#     pyplt.plot(X, y_pred, color ="red")
+#     pyplt.xlabel("sqrtt")
+#     pyplt.ylabel("average regret")
+#     pyplt.title("average regret vs sqrt t for TSDE(slope = $slope)")
+#     pyplt.savefig("average regret vs sqrt t TSDE.png")
+#
+# end
