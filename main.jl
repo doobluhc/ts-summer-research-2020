@@ -6,6 +6,7 @@ using ScikitLearn: fit!
 using ScikitLearn: predict
 using LsqFit
 using Statistics
+@sk_import linear_model: LinearRegression
 @pyimport matplotlib.pyplot as pyplt
 
 
@@ -37,14 +38,14 @@ function main(a::Float64,b::Float64,T::Int64,N::Int64)
 
     for n = 1:N
         cost[n],avg_cost[n], gain[n], regret[n], algo_name= algorithms_module.sample(algo)
-        t = 1
-        window_size = 100
-        while t < length(regret[n]) - window_size
-            this_window = regret[n][t:t + window_size]
-            window_average = sum(this_window)/window_size
-            regret_moving_average[n][t] = window_average
-            t = t+1
-        end
+        # t = 1
+        # window_size = 100
+        # while t < length(regret[n]) - window_size
+        #     this_window = regret[n][t:t + window_size]
+        #     window_average = sum(this_window)/window_size
+        #     regret_moving_average[n][t] = window_average
+        #     t = t+1
+        # end
         if n == 1
             println("Running $algo_name")
         end
@@ -52,13 +53,13 @@ function main(a::Float64,b::Float64,T::Int64,N::Int64)
 
     for t = 1:T
         temp1 = zeros(N)
-        temp2 = zeros(N)
+        # temp2 = zeros(N)
         for n = 1:N
             temp1[n] = regret[n][t]
-            temp2[n] = regret_moving_average[n][t]
+            # temp2[n] = regret_moving_average[n][t]
         end
         avg_regret[t] = mean(temp1)
-        mov_avg_regret[t] = mean(temp2)
+        # mov_avg_regret[t] = mean(temp2)
     end
 
     println("Data ready.")
@@ -70,13 +71,13 @@ function main(a::Float64,b::Float64,T::Int64,N::Int64)
 
 
     if plot_type == 1
-        plot_avg_regret_vs_t(mov_avg_regret,T,algo_name)
+        plot_avg_regret_vs_t(avg_regret,T,algo_name)
     elseif plot_type == 2
         plot_avg_cost_vs_t(avg_cost,T,N,algo_name)
     elseif plot_type == 3
-        plot_log_avg_regret_vs_log_t(mov_avg_regret,T,algo_name)
+        plot_log_avg_regret_vs_log_t(avg_regret,T,algo_name)
     elseif plot_type == 4
-        plot_avg_regret_vs_sqrt_t(mov_avg_regret,T,algo_name)
+        plot_avg_regret_vs_sqrt_t(avg_regret,T,algo_name)
     else
         println("Invalid input")
         return
@@ -118,14 +119,14 @@ end
 
 function plot_log_avg_regret_vs_log_t(data,T,algo_name)
     pyplt.clf()
-    X = reshape(log.([t for t = 10:T]),(T-9),1)
-    Y = reshape(log.(data[10:T]),(T-9),1)
+    X = reshape(log.([t for t = 100:T]),(T-99),1)
+    Y = reshape(log.(data[100:T]),(T-99),1)
     regr = LinearRegression()
     fit!(regr,X,Y)
     y_pred = predict(regr,X)
     slope = float(regr.coef_)
     intercept = float(regr.intercept_)
-    pyplt.plot(log.([t for t = 10:T]), log.(data[10:T]), color ="blue")
+    pyplt.plot(X, Y, color ="blue")
     pyplt.plot(X, y_pred, color ="red")
     pyplt.xlabel("logt")
     pyplt.ylabel("log(average regret)")
@@ -136,15 +137,15 @@ end
 
 function plot_avg_regret_vs_sqrt_t(data,T,algo_name)
     pyplt.clf()
-    X = reshape([sqrt(t) for t = 10:T],(T-9),1)
-    Y = reshape(data[10:T],(T-9),1)
+    X = reshape([sqrt(t) for t = 100:T],(T-99),1)
+    Y = reshape(data[100:T],(T-99),1)
     regr = LinearRegression()
     fit!(regr,X,Y)
     y_pred = predict(regr,X)
     slope = float(regr.coef_)
     intercept = float(regr.intercept_)
     # pyplt.fill_between([sqrt(t) for t = 100:T],bot[100:T],top[100:T],color="gray")
-    pyplt.plot([sqrt(t) for t = 10:T], data[10:T], color ="blue")
+    pyplt.plot(X, Y, color ="blue")
     pyplt.plot(X, y_pred, color ="red")
     pyplt.xlabel("sqrtt")
     pyplt.ylabel("average regret")
