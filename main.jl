@@ -10,7 +10,7 @@ using Statistics
 @pyimport matplotlib.pyplot as pyplt
 
 
-function main(a::Float64,b::Float64,T::Int64,N::Int64)
+function main(A::Float64,B::Float64,Q::Float64,R::Float64)
     avg_cost = [zeros(T) for n = 1:N]
     cost = [zeros(T) for n = 1:N]
     gain = [zeros(T) for n = 1:N]
@@ -23,21 +23,27 @@ function main(a::Float64,b::Float64,T::Int64,N::Int64)
     println("choose the algorithm: enter 1 for CE, 2 for SG, 3 for TS and 4 for TSDE")
     algo_type = parse(UInt8, readline())
 
+    println("enter the maximun time step (T)")
+    T = parse(UInt8, readline())
+
+    println("enter the number of sample paths (N)")
+    N = parse(UInt8, readline())
+
     if algo_type == 1
-        algo = CE(a,b,T)
+        algo = CE(A,B,Q,R)
     elseif algo_type == 2
-        algo = SG(a,b,T)
+        algo = SG(A,B,Q,R)
     elseif algo_type == 3
-        algo = TS(a,b,T)
+        algo = TS(A,B,Q,R)
     elseif algo_type == 4
-        algo = TSDE(a,b,T)
+        algo = TSDE(A,B,Q,R)
     else
         println("Invalid input")
         return
     end
 
     for n = 1:N
-        cost[n],avg_cost[n], gain[n], regret[n], algo_name= algorithms_module.sample(algo)
+        cost[n],avg_cost[n], gain[n], regret[n], algo_name= algorithms_module.sample(algo,T)
         # t = 1
         # window_size = 100
         # while t < length(regret[n]) - window_size
@@ -88,8 +94,8 @@ end
 
 function plot_avg_regret_vs_t(data,T,algo_name)
         pyplt.clf()
-        X = [t for t = 10:(T-20)]
-        Y = data[10:(T-20)]
+        X = [t for t = 100:(T-20)]
+        Y = data[100:(T-20)]
         @. model(x,p) = p[1] * x^p[2]
         p0 = [0.5,0.5]
         fit = curve_fit(model,X,Y,p0)
