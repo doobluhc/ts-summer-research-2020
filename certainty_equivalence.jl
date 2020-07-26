@@ -8,51 +8,55 @@ abstract type Algorithm end
 
 
 mutable struct CE <: Algorithm
-    a::Float64
-    b::Float64
-    T::Int64
+    A::Float64
+    B::Float64
+    Q::Float64
+    R::Float64
 end
 
 
-function sample(ce::CE)
+function sample(ce::CE,T::Int64)
 
-    a = ce.a
-    b = ce.b
-    T = ce.T
+    A = ce.A
+    B = ce.B
+    Q = ce.Q
+    R = ce.R
+
     cost = zeros(T)
     regret = zeros(T)
     avg_cost = zeros(T)
     gain = zeros(T)
-    x = 0.0
-    u = 0.0
-    w = 0.0
-    j_optimal = 1
-    θ̂ = [0.0;1.0]
-    Σ = [1.0 0.0; 0.0 1.0]
-    â = zeros(T)
-    b̂ = zeros(T)
+    x = zeros(Float64,size(A)[1],1)
+    u = zeros(Float64,size(A)[1],1)
+    w = zeros(Float64,size(A)[1],1)
+    θ̂ = [Matrix{Float64}(0,size(A)[1],size(A)[1]);Matrix{Float64}(1,size(B)[1],size(B)[1])]
+    Σ = Matrix{Float64}(I,size(A)[1],size(A)[1])
+    S = dare(A,B,Q,R)
+    j_optimal = trace(S*Σ)
+    Â = zeros(T)
+    B̂ = zeros(T)
 
     for t = 1:T
         if t == 1
-            cost[t] = x * x
-            regret[t] = x*x - j_optimal
+            cost[t] = x'*Q*x + u'*R*u
+            regret[t] = x'*Q*x + u'*R*u - j_optimal
         else
-            cost[t] = cost[t-1] + x * x
-            regret[t] = regret[t-1] + x*x - j_optimal
+            cost[t] = cost[t-1] + x'*Q*x + u'*R*u
+            regret[t] = regret[t-1] + x'*Q*x + u'*R*u - j_optimal
         end
         avg_cost[t] = cost[t] / t
         # println(x*x)
 
 
-
-        â = θ̂[1]
-        b̂ = θ̂[2]
-        gain[t] = θ̂[1] / θ̂[2]
+        Â = reshape(θ̂[1:size(A)[1],:],size(A)[1],size(A)[1])
+        B̂ = reshape(θ̂[1:size(B)[1],:],size(B)[1],size(B)[1])
+        Ŝ = dare(Â,B̂,Q,R)
+        gain[t] = inv(R + B̂'*Ŝ*B̂)*B̂'*Ŝ*Â
         u = -gain[t] * x
-        w = randn()
+        w = Matrix{Float64}(randn(),size(A)[1],1)
         z = [x;u]
 
-        x = a * x + b * u + w
+        x = A * x + B * u + w
 
 
         θ̂ = θ̂ + Σ * z * (x - z' * θ̂) / (1 + z' * Σ * z)
@@ -60,7 +64,7 @@ function sample(ce::CE)
     end
 
     algo_name = "CE"
-    return cost, avg_cost, gain, regret,algo_name
+    return cost, avg_cost, gain, regret, algo_name
 
 end
 
