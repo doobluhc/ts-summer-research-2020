@@ -2,6 +2,9 @@
 using ControlSystems
 using LinearAlgebra
 using Statistics
+using PyPlot
+using PyCall
+@pyimport matplotlib.pyplot as pyplt
 
 
 abstract type Algorithm end
@@ -15,59 +18,76 @@ mutable struct CE <: Algorithm
 end
 
 
-function sample(ce::CE,T::Int64)
+function sample(A::Array{Float64},B::Array{Float64},Q::Array{Float64},R::Array{Float64},T::Int64)
 
-    A = ce.A
-    B = ce.B
-    Q = ce.Q
-    R = ce.R
+    # A = ce.A
+    # B = ce.B
+    # Q = ce.Q
+    # R = ce.R
 
+    if size(B) == (size(B)[1],)
+        B = reshape(B,size(B)[1],1)
+    end
+    if size(R) == (size(R)[1],)
+        R = reshape(R,size(R)[1],1)
+    end
     cost = zeros(T)
     regret = zeros(T)
     avg_cost = zeros(T)
-    gain = zeros(T)
     x = zeros(Float64,size(A)[1],1)
-    u = zeros(Float64,size(A)[1],1)
+    u = zeros(Float64,size(B)[2],1)
     w = zeros(Float64,size(A)[1],1)
-    θ̂ = [Matrix{Float64}(0,size(A)[1],size(A)[1]);Matrix{Float64}(1,size(B)[1],size(B)[1])]
-    Σ = Matrix{Float64}(I,size(A)[1],size(A)[1])
+    θ̂ = vcat(zeros(Float64,size(A)[1],size(A)[1]),ones(Float64,size(B)[2],size(B)[1]))
+    Σ = Matrix{Float64}(I,size(B)[1]+size(B)[2],size(B)[1]+size(B)[2])
+    # println("A", size(A))
+    # println("B", size(B))
+    # println("Q", size(Q))
+    # println("R", size(R))
+    # println("x", size(x))
+    # println("u", size(u))
     S = dare(A,B,Q,R)
-    j_optimal = trace(S*Σ)
-    Â = zeros(T)
-    B̂ = zeros(T)
+    j_optimal = tr(S)
+    println(j_optimal)
 
     for t = 1:T
         if t == 1
-            cost[t] = x'*Q*x + u'*R*u
-            regret[t] = x'*Q*x + u'*R*u - j_optimal
+            cost[t] = (x'*Q*x + u'*R*u)[1]
+            regret[t] = (x'*Q*x + u'*R*u)[1] - j_optimal[1]
         else
-            cost[t] = cost[t-1] + x'*Q*x + u'*R*u
-            regret[t] = regret[t-1] + x'*Q*x + u'*R*u - j_optimal
+            cost[t] = cost[t-1] + (x'*Q*x + u'*R*u)[1]
+            regret[t] = regret[t-1] + (x'*Q*x + u'*R*u)[1] - j_optimal[1]
         end
         avg_cost[t] = cost[t] / t
-        # println(x*x)
 
 
-        Â = reshape(θ̂[1:size(A)[1],:],size(A)[1],size(A)[1])
-        B̂ = reshape(θ̂[1:size(B)[1],:],size(B)[1],size(B)[1])
+        Â = θ̂[1:size(A)[1],:]
+        B̂ = θ̂[size(A)[1]+1:size(A)[1]+size(B)[2],:]'
+
         Ŝ = dare(Â,B̂,Q,R)
-        gain[t] = inv(R + B̂'*Ŝ*B̂)*B̂'*Ŝ*Â
-        u = -gain[t] * x
-        w = Matrix{Float64}(randn(),size(A)[1],1)
-        z = [x;u]
+        gain = inv(R + B̂'*Ŝ*B̂)*B̂'*Ŝ*Â
+        u = -gain * x
+        w = Array{Float64}(undef,size(A)[1],1)
+        fill!(w,randn())
+        z = vcat(x,u)
 
         x = A * x + B * u + w
 
 
-        θ̂ = θ̂ + Σ * z * (x - z' * θ̂) / (1 + z' * Σ * z)
-        Σ = Σ - Σ * z * z' * Σ / (1 + z' * Σ * z)
+        θ̂ = θ̂ + (Σ * z * (x - θ̂'*z)') / (1 + (z' * Σ * z)[1])
+        Σ = Σ - Σ * z * z' * Σ / (1 + (z' * Σ * z)[1])
     end
 
     algo_name = "CE"
-    return cost, avg_cost, gain, regret, algo_name
+    pyplt.clf()
+    pyplt.plot([t for t = 1:T],avg_cost)
+    pyplt.axis([0,T,0,10])
+    pyplt.xlabel("t")
+    pyplt.ylabel("cost/t")
+    pyplt.title("cost/t vs t ")
+    pyplt.savefig("average cost vs t for CE2.png")
+    # return cost, avg_cost, regret, algo_name
 
 end
-
 # function simulation(ce::CE)
 #     a = ce.a
 #     b = ce.b
