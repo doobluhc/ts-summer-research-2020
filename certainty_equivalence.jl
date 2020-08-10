@@ -32,11 +32,7 @@ function sample(A::Array{Float64},B::Array{Float64},Q::Array{Float64},R::Array{F
         R = reshape(R,size(R,1),1)
     end
 
-    x = zeros(Float64,p,1)
-    u = ones(Float64,q,1)
-    w = zeros(Float64,p,1)
-    θ̂ = vcat(zeros(Float64,p,p),ones(Float64,q,p))
-    Σ = Symmetric(Matrix{Float64}(I,p+q,p+q))
+
     S = dare(A,B,Q,R)
     j_optimal = tr(S)
     println("optimal cost",j_optimal)
@@ -48,6 +44,11 @@ function sample(A::Array{Float64},B::Array{Float64},Q::Array{Float64},R::Array{F
     global_gain = [zeros(Float64,q,p) for n = 1:N]
 
     for n = 1:N
+        x = zeros(Float64,p,1)
+        u = ones(Float64,q,1)
+        w = zeros(Float64,p,1)
+        θ̂ = vcat(zeros(Float64,p,p),ones(Float64,q,p))
+        Σ = Symmetric(Matrix{Float64}(I,p+q,p+q))
         cost = zeros(T)
         regret = zeros(T)
         avg_cost = zeros(T)
