@@ -34,11 +34,7 @@ function sample(A::Array{Float64},B::Array{Float64},Q::Array{Float64},R::Array{F
     end
 
 
-    x = zeros(Float64,p,1)
-    u = ones(Float64,q,1)
-    w = zeros(Float64,p,1)
-    θ̂ = vcat(zeros(Float64,p,p),ones(Float64,q,p))
-    Σ = Symmetric(Matrix{Float64}(I,p+q,p+q))
+
     S = dare(A,B,Q,R)
     j_optimal = tr(S)
     println("optimal cost",j_optimal)
@@ -50,6 +46,12 @@ function sample(A::Array{Float64},B::Array{Float64},Q::Array{Float64},R::Array{F
     global_gain = [zeros(Float64,q,p) for n = 1:N]
 
     for n = 1:N
+        println(n)
+        x = zeros(Float64,p,1)
+        u = ones(Float64,q,1)
+        w = zeros(Float64,p,1)
+        θ̂ = vcat(zeros(Float64,p,p),ones(Float64,q,p))
+        Σ = Symmetric(Matrix{Float64}(I,p+q,p+q))
         cost = zeros(T)
         regret = zeros(T)
         avg_cost = zeros(T)
@@ -128,8 +130,8 @@ function plot_avg_cost_vs_t(data,T,N)
         pyplt.axis([0,T,0,10])
         pyplt.xlabel("t")
         pyplt.ylabel("cost/t")
-        pyplt.title("cost/t vs t ")
-        pyplt.savefig("average cost vs t for TSc.png")
+        pyplt.title("cost/t vs t for TS")
+        pyplt.savefig("average cost vs t for TSb.png")
     end
 
 end
@@ -155,7 +157,7 @@ function plot_log_avg_regret_vs_log_t(data,T)
     pyplt.plot(X, y_pred, color ="red")
     pyplt.xlabel("logt")
     pyplt.ylabel("log(average regret)")
-    pyplt.title("log(average regret) vs log(t) for CE(slope = $slope)")
+    pyplt.title("log(average regret) vs log(t) for TS(slope = $slope)")
     pyplt.savefig("log average regret vs log t TSb.png")
 
 end
@@ -182,6 +184,6 @@ function plot_avg_regret_vs_sqrt_t(data,T)
     pyplt.plot(X, y_pred, color ="red")
     pyplt.xlabel("sqrtt")
     pyplt.ylabel("average regret")
-    pyplt.title("average regret vs sqrt t for CE(slope = $slope)")
+    pyplt.title("average regret vs sqrt t for TS(slope = $slope)")
     pyplt.savefig("average regret vs sqrt t TSb.png")
 end
