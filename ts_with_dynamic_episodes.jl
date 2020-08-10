@@ -50,24 +50,20 @@ function sample(A::Array{Float64},B::Array{Float64},Q::Array{Float64},R::Array{F
         t = 1
         tⱼ = 0
         for j in 1:J
-            #println("j = $j ##############################")
             Tⱼ₋₁ = t - tⱼ
             tⱼ = t
-            #println("Tⱼ₋₁ = $Tⱼ₋₁")
-            #println("tⱼ = $tⱼ")
-
             θ̃ = zeros(Float64,(p+q),p)
             for i in 1:size(θ̂,2)
                 θ̃[:,i] = reshape(rand(MvNormal(θ̂[:,i],Σ)),p+q,1)
             end
-            # println("θ̃ = $θ̃")
+
             Â = reshape(θ̃[1:p,:],p,p)
             B̂ = reshape(θ̂[(p+1):(p+q),:],p,q)
             Ŝ = dare(Â,B̂,Q,R)
             Gⱼ = (R + B̂'*Ŝ*B̂)\(B̂'*Ŝ*Â)
 
             Σⱼ = Σ
-            # println("det sigj = $det_sigj")
+
 
             while t <= (tⱼ + Tⱼ₋₁) && det(Σ) >= 0.5*det(Σⱼ)
                 if t == 1
@@ -88,7 +84,7 @@ function sample(A::Array{Float64},B::Array{Float64},Q::Array{Float64},R::Array{F
                 normalize = 1 + (z' * Σ * z)[1]
                 θ̂ = θ̂ + (Σ * z * (x - θ̂'*z)') / normalize
                 Σ = Σ - Symmetric(Σ * z * z' * Σ) / normalize
-                # println("det sig = $det_sig")
+
                 t += 1
             end
             if t > T
