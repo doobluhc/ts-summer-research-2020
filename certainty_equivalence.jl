@@ -35,8 +35,8 @@ function sample(A::Array{Float64},B::Array{Float64},Q::Array{Float64},R::Array{F
 
     S = dare(A,B,Q,R)
     j_optimal = tr(S)
-    println("optimal cost",j_optimal)
-    println("optimal gain" , (R + B'*S*B)\(B'*S*A))
+    # println("optimal cost",j_optimal)
+    # println("optimal gain" , (R + B'*S*B)\(B'*S*A))
     global_avg_cost = [zeros(T) for n = 1:N]
     global_cost = [zeros(T) for n = 1:N]
     global_regret = [zeros(T) for n = 1:N]
@@ -87,21 +87,15 @@ function sample(A::Array{Float64},B::Array{Float64},Q::Array{Float64},R::Array{F
         sum_gain = sum_gain + global_gain[n]
     end
     avg_gain = N.\sum_gain
-    println("average estimated gain",avg_gain)
+    # println("average estimated gain",avg_gain)
 
     return global_cost, global_avg_cost, global_regret
 end
 
 
 function plot_avg_regret_vs_t(data,T)
-        avg_regret = zeros(T)
-        for t = 1:T
-            temp1 = zeros(N)
-            for n = 1:N
-                temp1[n] = data[n][t]
-            end
-            avg_regret[t] = mean(temp1)
-        end
+        data = reshape(hcat(data...),T,N)
+        avg_regret = reshape(mean(data,dims=2),T,)
         pyplt.clf()
         X = [t for t = 100:T]
         Y = avg_regret[100:T]
@@ -109,14 +103,16 @@ function plot_avg_regret_vs_t(data,T)
         p0 = [1.0,1.0]
         fit = curve_fit(model,X,Y,p0)
         y_fit = [fit.param[1] * x^fit.param[2] for x in X]
-        pyplt.plot(X, Y, color ="blue")
-        pyplt.plot(X, y_fit, color ="red")
-        pyplt.xlabel("t")
-        pyplt.ylabel("average regret")
-        pyplt.title("average regret vs t for CE")
-        pyplt.savefig("average regret vs t CEa.png")
-        println(fit.param[1])
-        println(fit.param[2])
+        # pyplt.plot(X, Y, color ="blue")
+        # pyplt.plot(X, y_fit, color ="red")
+        # pyplt.xlabel("t")
+        # pyplt.ylabel("average regret")
+        # pyplt.title("average regret vs t for CE")
+        # pyplt.savefig("average regret vs t CEa.png")
+        # println(fit.param[1])
+        # println(fit.param[2])
+
+        return fit.param[1],fit.param[2]
 end
 
 function plot_avg_cost_vs_t(data,T,N)
@@ -133,14 +129,8 @@ function plot_avg_cost_vs_t(data,T,N)
 end
 
 function plot_log_avg_regret_vs_log_t(data,T)
-    avg_regret = zeros(T)
-    for t = 1:T
-        temp1 = zeros(N)
-        for n = 1:N
-            temp1[n] = data[n][t]
-        end
-        avg_regret[t] = mean(temp1)
-    end
+    data = reshape(hcat(data...),T,N)
+    avg_regret = reshape(mean(data,dims=2),T,)
     pyplt.clf()
     X = reshape(log.([t for t = 100:T]),(T-99),1)
     Y = reshape(log.(avg_regret[100:T]),(T-99),1)
@@ -149,24 +139,19 @@ function plot_log_avg_regret_vs_log_t(data,T)
     y_pred = predict(regr,X)
     slope = float(regr.coef_)
 
-    pyplt.plot(X, Y, color ="blue")
-    pyplt.plot(X, y_pred, color ="red")
-    pyplt.xlabel("logt")
-    pyplt.ylabel("log(average regret)")
-    pyplt.title("log(average regret) vs log(t) for CE(slope = $slope)")
-    pyplt.savefig("log average regret vs log t CEa.png")
+    # pyplt.plot(X, Y, color ="blue")
+    # pyplt.plot(X, y_pred, color ="red")
+    # pyplt.xlabel("logt")
+    # pyplt.ylabel("log(average regret)")
+    # pyplt.title("log(average regret) vs log(t) for CE(slope = $slope)")
+    # pyplt.savefig("log average regret vs log t CEa.png")
+    return slope
 
 end
 
 function plot_avg_regret_vs_sqrt_t(data,T)
-    avg_regret = zeros(T)
-    for t = 1:T
-        temp1 = zeros(N)
-        for n = 1:N
-            temp1[n] = data[n][t]
-        end
-        avg_regret[t] = mean(temp1)
-    end
+    data = reshape(hcat(data...),T,N)
+    avg_regret = reshape(mean(data,dims=2),T,)
     pyplt.clf()
     X = reshape([sqrt(t) for t = 100:T],(T-99),1)
     Y = reshape(avg_regret[100:T],(T-99),1)
@@ -176,10 +161,43 @@ function plot_avg_regret_vs_sqrt_t(data,T)
     slope = float(regr.coef_)
     intercept = float(regr.intercept_)
     # pyplt.fill_between([sqrt(t) for t = 100:T],bot[100:T],top[100:T],color="gray")
-    pyplt.plot(X, Y, color ="blue")
-    pyplt.plot(X, y_pred, color ="red")
-    pyplt.xlabel("sqrtt")
-    pyplt.ylabel("average regret")
-    pyplt.title("average regret vs sqrt t for CE(slope = $slope)")
-    pyplt.savefig("average regret vs sqrt t CEa.png")
+    # pyplt.plot(X, Y, color ="blue")
+    # pyplt.plot(X, y_pred, color ="red")
+    # pyplt.xlabel("sqrtt")
+    # pyplt.ylabel("average regret")
+    # pyplt.title("average regret vs sqrt t for CE(slope = $slope)")
+    # pyplt.savefig("average regret vs sqrt t CEa.png")
+    return slope
+end
+
+function test()
+    I = 100
+    T = 10000
+    N = 10
+    p = 3
+    q = 3
+    c_list = []
+    α_list = []
+    Q = [1.0 0.0 0.0;0.0 1.0 0.0;0.0 0.0 1.0]
+    R = Q
+    log_slope_list = []
+    sqrt_slope_list = []
+    for i in 1:I
+        println(i)
+        M = randn(p,p)
+        A = M * M'
+        B = A
+        c = ctrb(A,B)
+        if rank(c) == p
+            data = sample(A,B,Q,R,T,N)
+            push!(log_slope_list,plot_log_avg_regret_vs_log_t(data[3],T))
+            push!(c_list,plot_avg_regret_vs_t(data[3],T)[1])
+            push!(α_list,plot_avg_regret_vs_t(data[3],T)[2])
+            push!(sqrt_slope_list,plot_avg_regret_vs_sqrt_t(data[3],T))
+        end
+
+    end
+
+    return c_list,α_list,log_slope_list,sqrt_slope_list
+
 end
